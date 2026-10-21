@@ -6,6 +6,10 @@
   "cpu": "AMD EPYC 7552",
   "architecture": "x86-64",
   "cores": 96,
+  "sockets": 2,
+  "coresPerSocket": 48,
+  "threadsPerSocket": 96,
+  "cachePerSocket": "192 MB L3",
   "threads": 192,
   "cpuSpecs": { "type": "2 × AMD EPYC 7552 · Zen 2", "cores": "96 total · 48 per CPU", "threads": "192 total · SMT enabled", "cache": "192 MB L3 per CPU · 384 MB total", "cacheSource": "https://www.amd.com/en/support/downloads/drivers.html/processors/epyc/epyc-7002-series/amd-epyc-7552.html" },
   "memory": "1 TiB",
@@ -19,6 +23,7 @@
   "goodFor": "CUDA development, independent GPU experiments that fit in 16 GB per card, and CPU analysis or preprocessing that benefits from 1 TiB of RAM.",
   "limitations": "Not a substitute for a large-memory scientific GPU: each RTX A4000 has 16 GB, weak double-precision throughput relative to compute-focused GPUs, and no NVLink. Communication-heavy multi-GPU training can be limited by PCIe.",
   "components": {
+    "cpu-interconnect": { "title": "AMD Infinity Fabric · CPU-to-CPU link", "text": "", "goodFor": "Exchanging data and maintaining cache coherence between the two EPYC processors. Each CPU can access memory attached to the other.", "limitations": "Remote memory access can cost more than local access. NUMA-aware placement can matter; this diagram is conceptual, not a map of the board’s physical links." },
     "cpu": { "title": "AMD EPYC 7552", "goodFor": "Parallel CPU analysis, preprocessing large datasets, and running many independent tasks.", "limitations": "AVX-512-only code and workloads that depend on strong single-core performance. Hardware threads share core resources; 192 threads are not 192 physical cores." },
     "gpu": {
       "title": "RTX A4000 · two separate GPUs",

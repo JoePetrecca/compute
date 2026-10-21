@@ -47,7 +47,7 @@ function part(kind, x, y, width, height, title, subtitle, extra = "") {
   const top = y + (height - 105) / 2;
   return `<g class="part" data-part="${kind}" tabindex="0" role="button" aria-label="${esc(title)}"><rect class="${type}-box" x="${x}" y="${y}" width="${width}" height="${height}" rx="18"/>${extra}<image class="component-icon" href="assets/icons/${icon}.svg" x="${x + width / 2 - 36}" y="${top}" width="72" height="48" aria-hidden="true"/><text class="label" x="${x + width / 2}" y="${top + 75}" text-anchor="middle">${esc(title)}</text><text class="sub" x="${x + width / 2}" y="${top + 101}" text-anchor="middle">${esc(subtitle)}</text></g>`;
 }
-function wire(path, label, x, y) { return `<path class="wire" d="${path}"/>${label ? `<g class="part" data-part="interconnect" tabindex="0" role="button" aria-label="Explain ${esc(label)}"><rect x="${x - 75}" y="${y - 18}" width="150" height="28" fill="transparent"/><text class="wire-label" x="${x}" y="${y}" text-anchor="middle">${esc(label)} ⓘ</text></g>` : ""}`; }
+function wire(path, label, x, y, kind = "interconnect") { return `<path class="wire" d="${path}"/>${label ? `<g class="part" data-part="${kind}" tabindex="0" role="button" aria-label="Explain ${esc(label)}"><rect x="${x - 75}" y="${y - 18}" width="150" height="28" fill="transparent"/><text class="wire-label" x="${x}" y="${y}" text-anchor="middle">${esc(label)} ⓘ</text></g>` : ""}`; }
 
 function localDiagram(p) {
   const blocks = [["cpu", "CPU", p.cpu]];
@@ -62,10 +62,28 @@ function localDiagram(p) {
   return diagram;
 }
 function serverDiagram(p) {
+  if (p.sockets === 2) return dualCpuDiagram(p);
   if (!p.gpu) return part("cpu", 80, 160, 340, 190, "CPU", `${p.cores} cores`) + wire("M420 255H575", "", 0, 0) + part("memory", 575, 160, 350, 190, p.memory, "System RAM");
   let diagram = part("cpu", 100, 50, 330, 150, "CPU", `${p.cores} cores`) + wire("M430 125H590", "", 0, 0) + part("memory", 590, 50, 300, 150, p.memory, "System RAM") + wire("M265 200V270H500V300", "PCIe", 500, 263);
   diagram += `<rect class="frame" x="55" y="300" width="890" height="240" rx="25"/><text class="wire-label" x="80" y="333">${p.gpuCount} × ${esc(p.gpu)}</text>`;
   for (let i = 0; i < p.gpuCount; i++) diagram += part("gpu", 90 + i * (820 / p.gpuCount), 360, 780 / p.gpuCount, 135, p.gpu, `GPU ${i + 1} · ${p.vram}`);
+  return diagram;
+}
+function dualCpuDiagram(p) {
+  let diagram = part("cpu-0", 65, 50, 210, 150, "CPU 1", `${p.coresPerSocket} cores`)
+    + part("cpu-1", 355, 50, 210, 150, "CPU 2", `${p.coresPerSocket} cores`)
+    + wire("M275 125H355", "Infinity Fabric", 315, 35, "cpu-interconnect")
+    + wire("M170 200V245H840V200 M460 200V245", "", 0, 0)
+    + part("memory", 690, 50, 280, 150, p.memory, "Total system RAM");
+  if (p.gpu) {
+    diagram += wire("M460 245V300", "PCIe", 500, 282)
+      + '<rect class="frame" x="55" y="300" width="890" height="240" rx="25"/>'
+      + `<text class="wire-label" x="80" y="333">${p.gpuCount} × ${esc(p.gpu)}</text>`;
+    for (let i = 0; i < p.gpuCount; i++) diagram += part("gpu", 90 + i * (820 / p.gpuCount), 360, 780 / p.gpuCount, 135, p.gpu, `GPU ${i + 1} · ${p.vram}`);
+  } else {
+    diagram += `<text class="wire-label" x="500" y="355" text-anchor="middle">${esc(p.cpu)} · ${p.cores} physical cores across two processors</text>`;
+  }
+  diagram += '<text class="wire-label" x="500" y="580" text-anchor="middle">Shared system overview · memory is distributed across CPU sockets (NUMA)</text>';
   return diagram;
 }
 function graceDiagram(p) {
@@ -79,7 +97,9 @@ function renderDiagram() {
 
 function showInspector(kind) {
   const p = state.current;
-  const copy = kind ? { ...componentCopy[kind], ...p.components?.[kind] } : { title: `${p.label} · machine overview`, text: p.description, tidbit: p.tidbit, goodFor: p.goodFor, limitations: p.limitations };
+  const componentKind = kind?.startsWith("cpu-") && kind !== "cpu-interconnect" ? "cpu" : kind;
+  const copy = kind ? { ...componentCopy[componentKind], ...p.components?.[componentKind] } : { title: `${p.label} · machine overview`, text: p.description, tidbit: p.tidbit, goodFor: p.goodFor, limitations: p.limitations };
+  if (componentKind === "cpu" && kind !== "cpu") copy.title = `CPU ${Number(kind.slice(-1)) + 1} · ${p.cpu}`;
   if (!copy) return;
   const facts = componentFacts(p, kind);
   $("#inspector").innerHTML = `<div class="inspector-heading"><p class="eyebrow">${kind ? "Component details" : "Machine specifications"}</p>${kind ? '<button class="overview-button" id="back-to-overview">Machine overview ↗</button>' : ""}</div><div class="inspector-summary"><h2>${esc(kind ? copy.title : p.label)}</h2></div><dl class="component-facts">${facts.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl><div class="workload-guidance"><section><h3>Good for</h3><p>${esc(copy.goodFor)}</p></section><section><h3>Not good for</h3><p>${esc(copy.limitations)}</p></section></div>`;
@@ -90,6 +110,8 @@ function showInspector(kind) {
 }
 
 function componentFacts(p, kind) {
+  if (kind === "cpu-0" || kind === "cpu-1") return [["Processor", p.cpu], ["Physical cores · this chip", p.coresPerSocket], ...(p.id === "moria" ? [["Hardware threads · this chip", p.threadsPerSocket]] : []), ["Cache · this chip", p.cachePerSocket]];
+  if (kind === "cpu-interconnect") return [["Connection", "AMD Infinity Fabric"], ["Connects", "CPU 1 ↔ CPU 2"], ["Memory access", "Local and remote (NUMA)"]];
   if (kind === "cpu") return [["Processor type", p.cpuSpecs?.type || p.cpu], ["Physical cores", p.cpuSpecs?.cores || "Model-dependent"], ...(p.id === "moria" ? [["Thread capability", p.cpuSpecs.threads]] : []), ["Cache", p.cpuSpecs?.cache || "Model-dependent"]];
   if (kind === "gpu" || kind === "discrete") return [["Processor", p.gpu || (kind === "gpu" ? "Integrated GPU" : "Not specified")], ["GPU count", p.gpuCount || "Model-dependent"], ["Memory per GPU", p.vram || (kind === "gpu" ? "Shared system RAM" : "Model-dependent")], ["Connection", p.interconnect || (kind === "discrete" ? "PCIe" : "On-processor")]];
   if (kind === "memory") return [["Capacity", p.memory], ["Used by", p.layout === "grace-hopper" ? "Grace CPU / coherent access" : "CPU and host applications"], ["Scope", "Per machine / node"]];
