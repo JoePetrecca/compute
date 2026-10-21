@@ -1,4 +1,4 @@
 {
-  "id": "acm-2005", "label": "ACM · 2005 GB", "group": "ICER · CPU", "cpu": "AMD EPYC 7763", "cores": 128, "memory": "2005 GB",
+  "id": "acm-2005", "label": "Milan · 2005 GB", "group": "ICER · CPU", "cpu": "AMD EPYC 7763", "cores": 128, "memory": "2005 GB",
   "nodeRange": "acm-[068–069]", "nodeCount": 2, "ssd": "412 GB", "cluster": "amd22", "sourceKey": "cluster"
 }

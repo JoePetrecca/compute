@@ -1,6 +1,6 @@
 {
   "id": "acm",
-  "label": "ACM CPU nodes",
+  "label": "Milan · 493 GB",
   "group": "ICER · CPU",
   "nodeCount": 48,
   "cluster": "amd22",
