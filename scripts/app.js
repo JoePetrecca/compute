@@ -96,12 +96,33 @@ async function loadProfiles() {
   choose(profiles[0].id);
 }
 
+function sidebarIcon(p) {
+  if (p.id === "moria") return '<span class="pickaxe-glyph"></span>';
+  let kind = "cpu";
+  let drawing = '<rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3"/>';
+  if (p.group === "ICER · Development") {
+    kind = p.gpu ? "terminal-gpu" : "terminal";
+    drawing = '<rect x="2" y="3" width="20" height="17" rx="3"/><path d="m6 8 3 3-3 3m6 0h4"/>';
+    if (p.gpu) drawing += '<rect class="sidebar-gpu-badge" x="14" y="13" width="9" height="9" rx="2"/><path d="M17 16h3v3h-3z"/>';
+  } else if (p.group === "ICER · Superchips") {
+    kind = p.layout === "grace-grace" ? "grace-grace" : "grace-hopper";
+    drawing = `<rect class="sidebar-grace-chip" x="1.5" y="6" width="8" height="12" rx="2"/><rect class="${p.layout === "grace-grace" ? "sidebar-grace-chip" : "sidebar-hopper-chip"}" x="14.5" y="6" width="8" height="12" rx="2"/><path d="M9.5 10h5m-5 4h5M4 3v3m3-3v3M17 3v3m3-3v3M4 18v3m3-3v3M17 18v3m3-3v3"/>`;
+  } else if (p.group === "ICER · GPU") {
+    kind = "graphics-card";
+    drawing = '<rect x="3" y="5" width="19" height="13" rx="2"/><circle cx="14.5" cy="11.5" r="4"/><path d="M14.5 7.5v8m-4-4h8M1 3v17m0-13h2m3 11v3m3-3v3m3-3v3M6 8v7"/>';
+  } else if (p.group === "ICER · Data Machine") {
+    kind = "storage";
+    drawing = '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3M4 18c0 1.7 3.6 3 8 3s8-1.3 8-3"/>';
+  }
+  return `<svg class="sidebar-symbol" data-icon="${kind}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${drawing}</svg>`;
+}
+
 function renderList() {
   document.querySelectorAll("[data-sidebar-mode]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.sidebarMode === state.sidebarMode)));
   const query = $("#search").value.trim().toLowerCase();
   const visible = state.profiles.filter((p) => [p.label, p.secondaryLabel, p.group, p.cpu, p.gpu, p.memory, p.cluster, p.nodeRange, sidebarSubtitle(p, "workload"), sidebarSubtitle(p, "specs"), ...p.nodes].filter(Boolean).join(" ").toLowerCase().includes(query));
   const groups = [...new Set(visible.map((p) => p.group))];
-  $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section data-group="${esc(group)}" class="${group === "ICER · Superchips" ? "superchip-group" : ""}"><h2 class="group-title">${esc(group === "ICER · Superchips" ? "Superchips" : group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${p.id === state.current?.id}"><span class="profile-icon${p.id === "moria" ? " pickaxe-icon" : ""}" aria-hidden="true">${p.id === "moria" ? '<span class="pickaxe-glyph"></span>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3"/></svg>'}</span><span><strong>${esc(p.label)}</strong>${p.secondaryLabel ? `<small class="profile-subname">${esc(p.secondaryLabel)}</small>` : ""}<small>${esc(subline(p))}</small></span></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
+  $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section data-group="${esc(group)}" class="${group === "ICER · Superchips" ? "superchip-group" : ""}"><h2 class="group-title">${esc(group === "ICER · Superchips" ? "Superchips" : group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${p.id === state.current?.id}"><span class="profile-icon${p.id === "moria" ? " pickaxe-icon" : ""}" aria-hidden="true">${sidebarIcon(p)}</span><span><strong>${esc(p.label)}</strong>${p.secondaryLabel ? `<small class="profile-subname">${esc(p.secondaryLabel)}</small>` : ""}<small>${esc(subline(p))}</small></span></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
 }
 
 function choose(id) {

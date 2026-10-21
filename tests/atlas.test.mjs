@@ -129,6 +129,14 @@ test("every view and clickable component renders usable information", async () =
   assert.ok(elements.get("#computer-list").innerHTML.includes('<strong>dev-amd24</strong><small class="profile-subname">Dev · Genoa</small>'));
   assert.equal((elements.get("#computer-list").innerHTML.match(/class="pickaxe-glyph"/g) || []).length, 1);
   assert.match(elements.get("#computer-list").innerHTML, /data-id="moria"[^>]*><span class="profile-icon pickaxe-icon"/);
+  for (const [group, icon] of [["ICER · CPU", "cpu"], ["ICER · GPU", "graphics-card"], ["ICER · Data Machine", "storage"]]) {
+    const count = profiles.filter(p => p.group === group).length;
+    assert.equal((elements.get("#computer-list").innerHTML.match(new RegExp(`data-icon="${icon}"`, "g")) || []).length, count);
+  }
+  assert.equal((elements.get("#computer-list").innerHTML.match(/data-icon="terminal-gpu"/g) || []).length, 2);
+  assert.equal((elements.get("#computer-list").innerHTML.match(/data-icon="terminal"/g) || []).length, 3);
+  assert.equal((elements.get("#computer-list").innerHTML.match(/data-icon="grace-hopper"/g) || []).length, 2);
+  assert.equal((elements.get("#computer-list").innerHTML.match(/data-icon="grace-grace"/g) || []).length, 1);
   for (const group of ["CPU", "GPU", "Data Machine", "Development", "Superchips"]) assert.ok(elements.get("#computer-list").innerHTML.includes(`data-group="ICER · ${group}"`));
   assert.equal(vm.runInContext("state.diagramView", context), "simple");
   assert.equal(vm.runInContext("state.sidebarMode", context), "specs");

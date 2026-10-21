@@ -54,6 +54,13 @@ nav section { margin-bottom: 10px; }
 .computer[aria-current=true] { background: #e1ebfa; color: #075bc0; }
 .profile-icon { width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 7px; background: #e2e7ed; color: #62738b; }
 .profile-icon svg { width: 18px; height: 18px; }
+.profile-icon .sidebar-symbol { width: 20px; height: 20px; }
+.sidebar-grace-chip { fill: #d4e7fc; stroke: #658db9; }
+.sidebar-hopper-chip, .sidebar-gpu-badge { fill: #e8dcfa; stroke: #9171ba; }
+[data-group="ICER · CPU"] .profile-icon { background: #e1ebf8; color: #527aa8; }
+[data-group="ICER · GPU"] .profile-icon { background: #eee5f8; color: #8864ac; }
+[data-group="ICER · Data Machine"] .profile-icon { background: #fbecd9; color: #aa713e; }
+[data-group="ICER · Development"] .profile-icon { background: #f8e5e5; color: #a76565; }
 .pickaxe-glyph { width: 20px; height: 20px; background: currentColor; -webkit-mask: url("../assets/icons/pickaxe.svg") center / contain no-repeat; mask: url("../assets/icons/pickaxe.svg") center / contain no-repeat; }
 .computer[aria-current=true] .profile-icon { background: #c9def8; color: #246aa8; }
 .computer strong { display: block; font-size: 12px; font-weight: 550; line-height: 1.4; }
