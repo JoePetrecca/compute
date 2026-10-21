@@ -1,6 +1,6 @@
 import { prepareProfiles, sidebarSubtitle } from "./profiles.js";
 const $ = (selector) => document.querySelector(selector);
-const state = { profiles: [], current: null, sidebarMode: readSidebarMode(), diagramView: "detailed", local: { integrated: true, npu: false, discrete: false } };
+const state = { profiles: [], current: null, sidebarMode: readSidebarMode(), diagramView: "simple", local: { integrated: true, npu: false, discrete: false } };
 
 let componentCopy = {};
 let hardware = {};
