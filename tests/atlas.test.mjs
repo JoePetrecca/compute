@@ -129,6 +129,11 @@ test("every view and clickable component renders usable information", async () =
         const panel = elements.get("#inspector").innerHTML;
         assert.ok(!panel.includes("undefined") && !panel.includes("NaN"), `${profile.id}/${kind}`);
         assert.ok(panel.includes("Good for") && panel.includes("Not good for"));
+        if (kind === "interconnect" && profile.layout === "grace-hopper") {
+          for (const text of ["NVLink-C2C", "900 GB/s aggregate (450 GB/s each direction)", "Physically separate, coherently accessible memory", "Unified CPU–GPU address space", "without conventional explicit copies", "Treating CPU memory as equally fast as GPU HBM"]) assert.ok(panel.includes(text), `${profile.id}: ${text}`);
+          assert.ok(!panel.includes("expansion devices"));
+          assert.ok(!panel.includes("independent GPU jobs"));
+        }
         if (kind === "gpu" && ["V100", "V100S"].includes(profile.gpu)) {
           assert.ok(panel.includes("Peak local memory bandwidth"));
           assert.ok(panel.includes(hardware.gpus[profile.gpu].memoryBandwidth));
