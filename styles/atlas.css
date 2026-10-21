@@ -71,6 +71,7 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .part { cursor: pointer; outline: none; }
 .part rect { stroke-width: 1.4; transition: stroke .2s, filter .2s; }
 .part:hover > rect, .part:focus-visible > rect { stroke: #718eae; stroke-width: 2; }
+.part.selected > rect { stroke: #5385be; stroke-width: 2.5; filter: drop-shadow(0 3px 8px #41688b18); }
 .part text { pointer-events: none; font-family: inherit; fill: #293648; }
 .component-icon { pointer-events: none; }
 .part .label { font-size: 29px; font-weight: 550; letter-spacing: -.6px; }
@@ -82,15 +83,25 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .memory-box { fill: var(--memory); stroke: #b4d2bd; }
 .accelerator-box { fill: var(--accelerator); stroke: #e7c5ac; }
 .frame { fill: #fafbfc; stroke: #dfe3e9; stroke-width: 1.4; }
-.inspector { border-top: 1px solid #ececf0; padding-top: 15px; margin-top: 12px; min-height: 48px; }
-.inspector-summary { display: flex; gap: 13px; align-items: baseline; }
+.inspector { border: 1px solid #dce5f0; border-top: 3px solid #8fb4df; border-radius: 14px; background: #f9fafc; padding: 20px 24px; margin-top: 12px; min-height: 48px; box-shadow: 0 4px 18px #223b5b06; }
+.inspector-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.inspector .inspector-heading .eyebrow { display: block; margin: 0; color: #647a92; }
+.overview-button { border: 0; padding: 0; background: transparent; color: #006bd3; font-size: 11px; }
+.inspector-summary { display: block; }
+.component-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 16px 0; }
+.component-facts > div { display: flex; flex-direction: column; background: #fff; border: 1px solid #e5e9ef; border-radius: 9px; padding: 10px 12px; }
+.component-facts dt { color: #858a94; font-size: 10px; margin-bottom: 4px; }
+.component-facts dd { margin: 0; color: #34465b; font-size: 14px; font-weight: 550; overflow-wrap: anywhere; }
+.workload-guidance { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.inspector h3 { font-size: 11px; font-weight: 600; color: #647a92; margin: 0 0 5px; }
+.machine-context { margin-top: 15px; padding-top: 12px; border-top: 1px solid #e5e9ef; }
 .inspector-tidbit { margin-top: 10px; font-size: 12px; color: #7c7c86; }
 .inspector-tidbit summary { cursor: pointer; color: #647a92; width: fit-content; }
 .inspector-tidbit p { padding-top: 6px; }
 .inspector .inspector-hint { font-size: 11px; color: #9898a1; margin-top: 10px; }
 .inspector .eyebrow { display: none; }
-.inspector h2 { font-size: 14px; font-weight: 550; white-space: nowrap; margin: 0; }
-.inspector p:last-child { font-size: 13px; color: #7c7c86; margin: 0; }
+.inspector h2 { font-size: 20px; font-weight: 550; letter-spacing: -.4px; margin: 0 0 6px; }
+.inspector p { font-size: 13px; line-height: 1.65; color: #5c6470; margin: 0; }
 .main-footer { display: flex; justify-content: space-between; gap: 20px; color: #a0a0a8; font-size: 10px; margin-top: 8px; }
 .main-footer i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin: 0 4px 0 10px; }
 .main-footer i:first-child { margin-left: 0; }
@@ -119,6 +130,7 @@ dialog h2 { font-size: 27px; font-weight: 550; letter-spacing: -.7px; margin: 0 
   .app { grid-template-columns: 240px minmax(0, 1fr); }
   main { padding: 23px 22px 18px; }
   .inspector-summary { display: block; }
+  .component-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inspector h2 { margin-bottom: 3px; }
   .controls { gap: 10px; }
   .controls label { font-size: 11px; }
@@ -141,6 +153,8 @@ dialog h2 { font-size: 27px; font-weight: 550; letter-spacing: -.7px; margin: 0 
   .part .label { font-size: 32px; }
   .part .sub { font-size: 21px; }
   .main-footer { flex-wrap: wrap; font-size: 9px; gap: 8px; }
+  .inspector { padding: 16px; }
+  .workload-guidance { grid-template-columns: 1fr; gap: 14px; }
   dialog { padding: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {

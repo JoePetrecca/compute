@@ -79,9 +79,24 @@ function renderDiagram() {
 
 function showInspector(kind) {
   const p = state.current;
-  const copy = kind ? p.components?.[kind] || componentCopy[kind] : { title: "A little context", text: p.tidbit };
+  const copy = kind ? { ...componentCopy[kind], ...p.components?.[kind] } : { title: `${p.label} · machine overview`, text: p.description, tidbit: p.tidbit, goodFor: p.goodFor, limitations: p.limitations };
   if (!copy) return;
-  $("#inspector").innerHTML = `<div class="inspector-summary"><h2>${esc(copy.title)}</h2><p>${esc(copy.text)}</p></div>${copy.tidbit ? `<details class="inspector-tidbit"><summary>A little more</summary><p>${esc(copy.tidbit)}</p></details>` : ""}${!kind ? '<p class="inspector-hint">Select a component or a connection label to learn more.</p>' : ""}`;
+  const facts = componentFacts(p, kind);
+  $("#inspector").innerHTML = `<div class="inspector-heading"><p class="eyebrow">${kind ? "Component details" : "Machine guide"}</p>${kind ? '<button class="overview-button" id="back-to-overview">Machine overview ↗</button>' : ""}</div><div class="inspector-summary"><h2>${esc(copy.title)}</h2><p>${esc(copy.text)}</p></div><dl class="component-facts">${facts.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl><div class="workload-guidance"><section><h3>Good fit</h3><p>${esc(copy.goodFor)}</p></section><section><h3>Limitations & trade-offs</h3><p>${esc(copy.limitations)}</p></section></div>${kind && p.group !== "Local machines" ? `<div class="machine-context"><h3>On ${esc(p.label)}</h3><p>${esc(p.goodFor)} ${esc(p.limitations)}</p></div>` : ""}${copy.tidbit ? `<details class="inspector-tidbit"><summary>Background & context</summary><p>${esc(copy.tidbit)}</p></details>` : ""}<p class="inspector-hint">${p.localOptions ? "Generic example: actual hardware varies by model." : "Full-machine reference, not a live allocation or availability check."} Select a component or connection for details.</p>${p.source?.url ? `<a class="source-link" href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(p.source.label)} ↗</a>` : `<p class="inspector-hint">${esc(p.source?.label)}</p>`}`;
+  document.querySelectorAll("[data-part]").forEach((part) => {
+    part.classList.toggle("selected", part.dataset.part === kind);
+    part.setAttribute("aria-pressed", String(part.dataset.part === kind));
+  });
+}
+
+function componentFacts(p, kind) {
+  if (kind === "cpu") return [["Processor", p.cpu], ["Physical cores", p.cores || "Model-dependent"], ["Architecture", p.architecture], ...(p.threads ? [["Hardware threads", p.threads]] : [])];
+  if (kind === "gpu" || kind === "discrete") return [["Processor", p.gpu || (kind === "gpu" ? "Integrated GPU" : "Not specified")], ["GPU count", p.gpuCount || "Model-dependent"], ["Memory per GPU", p.vram || (kind === "gpu" ? "Shared system RAM" : "Model-dependent")], ["Connection", p.interconnect || (kind === "discrete" ? "PCIe" : "On-processor")]];
+  if (kind === "memory") return [["Capacity", p.memory], ["Used by", p.layout === "grace-hopper" ? "Grace CPU / coherent access" : "CPU and host applications"], ["Scope", "Per machine / node"]];
+  if (kind === "vram") return [["Capacity per GPU", p.vram || "Model-dependent"], ["Memory type", p.layout === "grace-hopper" ? "HBM (high-bandwidth memory)" : "Dedicated GPU memory"], ["Automatic pooling", "No"]];
+  if (kind === "interconnect") return p.layout === "grace-hopper" ? [["Link", "NVLink-C2C"], ["Connects", "Grace CPU ↔ Hopper GPU"], ["Memory arrangement", "Distinct CPU and GPU pools"]] : [["Link", "PCIe"], ["Generation / lanes", "Not specified here"], ...(p.id === "moria" ? [["GPU-to-GPU NVLink", "Not supported by RTX A4000"]] : [])];
+  if (kind === "npu") return [["Device", "Model-dependent NPU"], ["Primary role", "Supported AI inference"], ["Runtime support", "Required"]];
+  return [["Processor", p.cpu], ["Physical cores", p.cores || "Model-dependent"], ["System memory", p.memory], ["GPUs", p.gpu ? `${p.gpuCount} × ${p.gpu}` : p.localOptions ? "Configurable example" : "No compute GPU"]];
 }
 function details() {
   const p = state.current;
@@ -98,5 +113,6 @@ $("#diagram").addEventListener("keydown", (event) => { if ((event.key === "Enter
 [["#integrated-gpu", "integrated"], ["#npu", "npu"], ["#discrete-gpu", "discrete"]].forEach(([selector, key]) => $(selector).addEventListener("change", (event) => { state.local[key] = event.target.checked; renderDiagram(); }));
 $("#details-button").addEventListener("click", details);
 $("#close-dialog").addEventListener("click", () => $("#details-dialog").close());
+$("#inspector").addEventListener("click", (event) => { if (event.target.closest("#back-to-overview")) showInspector(); });
 
 loadProfiles().catch((error) => { $("#computer-list").innerHTML = `<p class="loading">Unable to load the computer profiles. Run this site through a web server. (${esc(error.message)})</p>`; });

@@ -15,6 +15,8 @@
   "nodeRange": "moria.egr.msu.edu",
   "description": "Lab server with two RTX A4000 GPUs for CUDA development, manageable-size training and inference, rendering, and parallel CPU work.",
   "tidbit": "Moria has two 48-core CPUs: 96 physical cores in total. Its 192 hardware threads let each core manage two instruction streams, not do twice as much work automatically.",
+  "goodFor": "CUDA development, independent GPU experiments that fit in 16 GB per card, and CPU analysis or preprocessing that benefits from 1 TiB of RAM.",
+  "limitations": "Not a substitute for a large-memory scientific GPU: each RTX A4000 has 16 GB, weak double-precision throughput relative to compute-focused GPUs, and no NVLink. Communication-heavy multi-GPU training can be limited by PCIe.",
   "components": {
     "gpu": { "title": "RTX A4000 · two separate GPUs", "text": "Each card has 16 GB of its own memory and can run compatible CUDA workloads. The two cards can run independent jobs or cooperate when software explicitly supports multiple GPUs.", "tidbit": "Two 16 GB cards do not automatically act like one 32 GB card. These GPUs communicate through PCIe rather than NVLink." },
     "memory": { "title": "1 TiB · system RAM", "text": "Moria has a large CPU-side workspace for datasets, preprocessing, and memory-intensive analysis. This RAM is separate from each graphics card’s 16 GB.", "tidbit": "TiB means tebibyte: 1 TiB is 1,024 GiB. Binary units such as GiB and TiB differ from decimal GB and TB." }

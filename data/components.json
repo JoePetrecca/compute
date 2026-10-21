@@ -1,36 +1,50 @@
 {
   "cpu": {
     "title": "CPU · central processing unit",
+    "goodFor": "General-purpose code, data preparation, numerical libraries, and parallel CPU work.",
+    "limitations": "More cores do not fix a serial bottleneck. CPU-only execution cannot use CUDA GPU kernels.",
     "text": "The general-purpose processor: it runs your program, prepares data, and coordinates the rest of the computer. Multiple cores can work on separate tasks at the same time.",
     "tidbit": "More cores help parallel work, but a task that must happen one step at a time may still depend on the speed of a single core."
   },
   "gpu": {
     "title": "GPU · graphics processing unit",
+    "goodFor": "Supported parallel arithmetic, graphics, and machine-learning workloads.",
+    "limitations": "Requires compatible software. Model size, numerical precision, and memory bandwidth matter more than the GPU label alone.",
     "text": "Originally built for graphics, GPUs are also good at doing many similar calculations at once—useful for neural networks, image processing, and some simulations.",
     "tidbit": "Software has to support the GPU. Simply having one does not make every program faster. An integrated GPU usually shares system RAM rather than having its own separate memory."
   },
   "memory": {
     "title": "RAM · random-access memory",
+    "goodFor": "Keeping CPU datasets, application state, and preprocessing buffers in memory.",
+    "limitations": "Not persistent storage and not automatically GPU memory. Extra capacity alone does not accelerate a compute-bound task.",
     "text": "The computer’s temporary workspace for running programs and their data. More RAM lets larger datasets fit in memory, but it is not the same thing as disk storage.",
     "tidbit": "Capacity tells you how much fits; bandwidth tells you how quickly data can move. RAM normally loses its contents when the computer powers off."
   },
   "vram": {
     "title": "VRAM · GPU memory",
+    "goodFor": "Holding GPU model weights, activations, gradients, and calculation buffers near the GPU.",
+    "limitations": "Capacity is per GPU. Multiple cards do not automatically combine their memories into a larger pool.",
     "text": "The GPU’s own workspace for model weights, images, intermediate results, and other data. A workload must fit here or deliberately move or split its data.",
     "tidbit": "Training needs room for more than model weights: gradients, optimizer state, and intermediate activations also use memory."
   },
   "npu": {
     "title": "NPU · neural processing unit",
+    "goodFor": "Energy-efficient inference through supported on-device AI runtimes.",
+    "limitations": "Not a general-purpose training device. Unsupported models or operators may run elsewhere or fail to accelerate.",
     "text": "A specialized processor for supported AI tasks, often designed for efficient on-device inference—running an already-trained model.",
     "tidbit": "An NPU is not a small general-purpose GPU. The model, operators, and software runtime must support it."
   },
   "discrete": {
     "title": "Discrete · a separate graphics processor",
+    "goodFor": "Compatible graphics and parallel computation using a separate GPU and memory pool.",
+    "limitations": "The actual card determines CUDA support, memory capacity, precision, and speed. No particular GPU is specified here.",
     "text": "A GPU separate from the CPU, typically on its own graphics card with its own memory. It handles supported graphics and parallel computation.",
     "tidbit": "“Discrete” means separate. It does not specify a brand, memory capacity, or software compatibility."
   },
   "interconnect": {
     "title": "PCIe · Peripheral Component Interconnect Express",
+    "goodFor": "Moving data between the host computer and expansion devices; independent GPU jobs with modest transfer needs.",
+    "limitations": "Frequent CPU–GPU or cross-GPU transfers can become a bottleneck. The actual PCIe generation, lanes, and topology are not specified by this diagram.",
     "text": "A high-speed connection used to move data between the computer and devices such as graphics cards and SSDs. Think of it as a road between components, not another processor.",
     "tidbit": "PCIe connections have generations and lane counts (such as x16). Both affect available bandwidth; transferring data can still take time even with a fast GPU."
   }

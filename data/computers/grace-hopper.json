@@ -15,6 +15,8 @@
   "nodeRange": "nch-[000–002]",
   "description": "Grace CPU and Hopper GPU in one tightly connected superchip, suited to supported GPU work with substantial CPU–GPU interaction.",
   "tidbit": "The name honors Grace Hopper, a pioneering computer scientist and U.S. Navy rear admiral who helped develop early compilers and influenced COBOL. NVIDIA pairs its Grace CPU with its Hopper-architecture GPU in this superchip.",
+  "goodFor": "Supported CUDA AI and scientific computation, especially workloads that exchange substantial data between CPU and GPU or use a large host-side working set. The coherent NVLink-C2C connection is its distinguishing feature.",
+  "limitations": "Not an x86 drop-in replacement: binaries and dependencies need ARM64 support. The 480 GB of CPU memory is not an extra 480 GB of equally fast GPU HBM. There is one GPU per node; software and access restrictions still apply.",
   "components": {
     "cpu": { "title": "Grace · the CPU half", "text": "The 72-core NVIDIA Grace CPU runs general-purpose code and prepares work for the Hopper GPU. It uses Arm instructions, so software needs an ARM64-compatible build.", "tidbit": "Arm is an instruction-set family, not a guarantee that software built for an Apple Mac will run unchanged on this Linux node." },
     "gpu": { "title": "Hopper · the GPU half", "text": "The Hopper GPU handles supported parallel computation, including AI and scientific workloads. GH200 is the Grace Hopper superchip pairing—not a second CPU.", "tidbit": "Grace is the CPU name; Hopper is the GPU architecture. Together they make Grace Hopper." },
