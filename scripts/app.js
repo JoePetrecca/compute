@@ -1,9 +1,46 @@
 import { prepareProfiles, sidebarSubtitle } from "./profiles.js";
+import { buildUsage, usageDefaults } from "./usage.js";
 const $ = (selector) => document.querySelector(selector);
 const state = { profiles: [], current: null, sidebarMode: readSidebarMode(), diagramView: "simple", local: { integrated: true, npu: false, discrete: false } };
 
 let componentCopy = {};
 let hardware = {};
+let usageMode = "slurm";
+let usageValues = { ...usageDefaults };
+let generatedUsage = "";
+
+function setMachineTab(tab) {
+  const enabled = state.current?.id === "h200-4";
+  const usage = enabled && tab === "usage";
+  $("#machine-tabs").hidden = !enabled;
+  $("#inspector").hidden = usage;
+  $("#usage-panel").hidden = !usage;
+  $("#specs-tab").setAttribute("aria-selected", String(!usage));
+  $("#usage-tab").setAttribute("aria-selected", String(usage));
+  $("#specs-tab").tabIndex = usage ? -1 : 0;
+  $("#usage-tab").tabIndex = usage ? 0 : -1;
+  if (enabled) {
+    $("#inspector").setAttribute("role", "tabpanel");
+    $("#inspector").setAttribute("aria-labelledby", "specs-tab");
+  } else {
+    $("#inspector").removeAttribute("role");
+    $("#inspector").removeAttribute("aria-labelledby");
+  }
+  if (usage) renderUsage();
+}
+
+function renderUsage() {
+  const field = (key, label, attributes) => `<label>${label}<input name="${key}" value="${esc(usageValues[key])}" ${attributes}></label>`;
+  $("#usage-panel").innerHTML = `<div class="resource-builder"><h2>Configure your resources</h2><p>One Genoa + Hopper compute node · request only what your program can use.</p><form id="resource-form"><div class="resource-fields">${field("cpus", "CPU cores", 'type="number" min="1" max="192" step="1" required')}${field("memory", "System RAM (GiB)", 'type="number" min="1" max="768" step="1" required')}${field("gpus", "H200 GPUs", 'type="number" min="1" max="4" step="1" required')}${field("time", "Wall time (HH:MM:SS)", 'type="text" required')}${field("account", "Account (optional)", 'type="text" placeholder="Your Slurm account"')}</div></form><p class="resource-hint">RAM is CPU memory, not GPU memory. Each whole H200 provides 141 GB of GPU memory; GPU memories do not automatically combine. This template uses one task; your application must support multiple CPU cores or GPUs.</p><div class="usage-modes view-switch" role="group" aria-label="How to run"><button type="button" data-usage-mode="slurm" aria-pressed="${usageMode === "slurm"}">Slurm job</button><button type="button" data-usage-mode="interactive" aria-pressed="${usageMode === "interactive"}">Interactive</button></div></div><div id="usage-output"></div>`;
+  updateUsage();
+}
+
+function updateUsage() {
+  const result = buildUsage(state.current, usageValues, usageMode);
+  generatedUsage = result.code || "";
+  const development = usageMode === "interactive" ? `<section class="dev-route"><h3>Quick development · shared node</h3><p>From an ICER gateway, connect with:</p><pre><code>ssh dev-amd24-h200</code></pre><p>This does not reserve the resources selected above. The development node is shared: two hours of aggregate CPU time or GPU access time, and an 80% node-memory cap for processes. Use the reserved session below for longer work or guaranteed allocations.</p></section>` : "";
+  $("#usage-output").innerHTML = `${development}<section class="generated-job"><div class="usage-code-heading"><h3>${usageMode === "slurm" ? "Your Slurm script" : "Reserved interactive session"}</h3><button type="button" class="secondary" id="copy-usage" ${result.error ? "disabled" : ""}>${usageMode === "slurm" ? "Copy script" : "Copy command"}</button></div>${result.error ? `<p class="usage-error" role="alert">${esc(result.error)}</p>` : `<pre><code>${esc(result.code)}</code></pre>`}<p id="copy-status" role="status"></p><p>${usageMode === "slurm" ? 'Save as <code>hopper.sbatch</code>, replace the example program and environment setup, then submit from an ICER gateway with <code>sbatch hopper.sbatch</code>.' : 'Run this command from an ICER gateway. Wait for allocation before running your program; type <code>exit</code> to release the session.'}</p></section><p class="usage-policy">The <code>nfh</code> constraint targets the four-GPU H200 configuration. Requests queue; they do not guarantee immediate availability. Slurm CPUs follow site scheduling configuration. RAM is an inventory ceiling, not a guarantee of allocatable memory; time, account, partition, and access policies may further restrict requests. This is a template, not a submitted or cluster-tested job.</p><p class="usage-sources"><a href="https://docs.icer.msu.edu/Requesting_GPUs/" target="_blank" rel="noopener">ICER GPU requests ↗</a> · <a href="https://docs.icer.msu.edu/Job_Constraints/" target="_blank" rel="noopener">Constraints ↗</a> · <a href="https://docs.icer.msu.edu/development_nodes/" target="_blank" rel="noopener">Development rules ↗</a></p>`;
+}
 
 function esc(value) { return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function readSidebarMode() {
@@ -57,6 +94,7 @@ function choose(id) {
   renderList();
   renderDiagram();
   showInspector();
+  setMachineTab("specs");
 }
 
 function part(kind, x, y, width, height, title, subtitle, extra = "") {
@@ -140,6 +178,7 @@ function renderDiagram() {
 }
 
 function showInspector(kind) {
+  if (kind) setMachineTab("specs");
   const p = state.current;
   const componentKind = kind?.startsWith("cpu-") && kind !== "cpu-interconnect" ? "cpu" : kind;
   const copy = kind ? { ...componentCopy[componentKind], ...p.components?.[componentKind] } : { title: `${p.label} · machine overview`, text: p.description, tidbit: p.tidbit, goodFor: p.goodFor, limitations: p.limitations };
@@ -181,6 +220,35 @@ function details() {
 }
 
 $("#search").addEventListener("input", renderList);
+$("#machine-tabs").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-machine-tab]");
+  if (button) setMachineTab(button.dataset.machineTab);
+});
+$("#machine-tabs").addEventListener("keydown", (event) => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const tab = event.key === "Home" ? "specs" : event.key === "End" ? "usage" : $("#usage-panel").hidden ? "usage" : "specs";
+  setMachineTab(tab);
+  $(tab === "usage" ? "#usage-tab" : "#specs-tab").focus();
+});
+$("#usage-panel").addEventListener("submit", (event) => event.preventDefault());
+$("#usage-panel").addEventListener("input", (event) => {
+  const input = event.target;
+  if (Object.hasOwn(usageDefaults, input.name)) {
+    usageValues[input.name] = input.value;
+    updateUsage();
+  }
+});
+$("#usage-panel").addEventListener("click", async (event) => {
+  const mode = event.target.closest("[data-usage-mode]");
+  if (mode) { usageMode = mode.dataset.usageMode; renderUsage(); }
+  if (event.target.closest("#copy-usage") && generatedUsage) {
+    try {
+      await navigator.clipboard.writeText(generatedUsage);
+      $("#copy-status").textContent = "Copied.";
+    } catch { $("#copy-status").textContent = "Clipboard unavailable. Select and copy the code above."; }
+  }
+});
 $("#sidebar-mode-controls").addEventListener("click", (event) => {
   const button = event.target.closest("[data-sidebar-mode]");
   if (button) setSidebarMode(button.dataset.sidebarMode);

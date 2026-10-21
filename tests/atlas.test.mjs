@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 import { prepareProfiles, expandNodes, sidebarSubtitle } from "../scripts/profiles.js";
+import { buildUsage, usageDefaults } from "../scripts/usage.js";
 
 const root = new URL("../", import.meta.url);
 const json = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
@@ -106,12 +107,14 @@ test("every view and clickable component renders usable information", async () =
   const elements = new Map();
   const storage = new Map([["compute-sidebar-mode", "specs"]]);
   const context = vm.createContext({
+    buildUsage,
+    usageDefaults,
     prepareProfiles,
     sidebarSubtitle,
     localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
     document: {
       querySelector(key) {
-        if (!elements.has(key)) elements.set(key, { value: "", addEventListener() {}, showModal() {}, close() {} });
+        if (!elements.has(key)) elements.set(key, { value: "", addEventListener() {}, showModal() {}, close() {}, setAttribute() {}, removeAttribute() {} });
         return elements.get(key);
       },
       querySelectorAll: () => []
@@ -119,7 +122,7 @@ test("every view and clickable component renders usable information", async () =
     fetch: async (path) => ({ ok: true, json: () => json(path) })
   });
   let app = await readFile(new URL("scripts/app.js", root), "utf8");
-  app = app.replace(/^import .*\n/, "").replace("loadProfiles().catch", "globalThis.ready = loadProfiles().catch");
+  app = app.replace(/^import .*\n/gm, "").replace("loadProfiles().catch", "globalThis.ready = loadProfiles().catch");
   vm.runInContext(app, context);
   await context.ready;
   assert.deepEqual(manifest.slice(0, 5), ["dev-amd24", "dev-amd24-h200", "dev-amd20", "dev-amd20-v100", "dev-intel18"]);
@@ -127,6 +130,18 @@ test("every view and clickable component renders usable information", async () =
   for (const group of ["CPU", "GPU", "Data Machine", "Development", "Superchips"]) assert.ok(elements.get("#computer-list").innerHTML.includes(`data-group="ICER · ${group}"`));
   assert.equal(vm.runInContext("state.diagramView", context), "simple");
   assert.equal(vm.runInContext("state.sidebarMode", context), "specs");
+  vm.runInContext("choose('h200-4'); setMachineTab('usage');", context);
+  assert.equal(elements.get("#usage-panel").hidden, false);
+  assert.equal(elements.get("#inspector").hidden, true);
+  assert.ok(elements.get("#usage-panel").innerHTML.includes("Configure your resources"));
+  assert.ok(elements.get("#usage-output").innerHTML.includes("sbatch hopper.sbatch"));
+  vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
+  assert.ok(elements.get("#usage-output").innerHTML.includes("ssh dev-amd24-h200"));
+  assert.ok(elements.get("#usage-output").innerHTML.includes("does not reserve"));
+  vm.runInContext("showInspector('gpu');", context);
+  assert.equal(elements.get("#usage-panel").hidden, true);
+  vm.runInContext("choose('h200-8');", context);
+  assert.equal(elements.get("#machine-tabs").hidden, true);
   vm.runInContext("choose('acm'); showInspector('cpu');", context);
   const before = [elements.get("#diagram").innerHTML, elements.get("#inspector").innerHTML];
   vm.runInContext("setSidebarMode('workload')", context);

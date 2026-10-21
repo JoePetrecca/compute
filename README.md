@@ -50,4 +50,10 @@ Reviewed October 20, 2026 against ICER’s [cluster](https://docs.icer.msu.edu/C
 
 ## Checks
 
-Run `node --test tests/atlas.test.mjs` to validate profile coverage, node ranges, physical-resource counts, both diagram views, and component panels. These checks do not replace a visual browser review.
+Run `node --test tests/*.test.mjs` to validate profile coverage, node ranges, physical-resource counts, both diagram views, component panels, and resource-request templates. These checks do not replace a visual browser review.
+
+## Usage-tab prototype
+
+Select **Genoa · Hopper · 4 GPUs**, then **How to use this computer**. The centered builder generates a single-node, single-task Slurm script or reserved interactive shell command with CPU, system RAM, whole-GPU, wall-time, and optional account settings. The `nfh` feature constraint selects the four-GPU H200 node family. Interactive mode separately explains SSH access to the shared `dev-amd24-h200` node; SSH does not reserve the builder's resources.
+
+Templates live in `scripts/usage.js`. They are not submitted automatically or tested against a live allocation. Inventory ceilings are not guarantees of scheduler-available resources; account, partition, and time policies still apply. Replace the program/environment placeholders before submitting a batch script. Request syntax follows ICER's [GPU requests](https://docs.icer.msu.edu/Requesting_GPUs/) and [job constraints](https://docs.icer.msu.edu/Job_Constraints/) documentation.

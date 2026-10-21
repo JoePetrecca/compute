@@ -55,11 +55,16 @@
         </div>
       </div>
       <section id="diagram" class="diagram" aria-label="Hardware architecture diagram"></section>
+      <div id="machine-tabs" class="machine-tabs" role="tablist" aria-label="Machine information" hidden>
+        <button id="specs-tab" type="button" role="tab" aria-selected="true" aria-controls="inspector" data-machine-tab="specs">Machine specs</button>
+        <button id="usage-tab" type="button" role="tab" aria-selected="false" aria-controls="usage-panel" tabindex="-1" data-machine-tab="usage">How to use this computer</button>
+      </div>
       <section id="inspector" class="inspector" aria-live="polite">
         <p class="eyebrow">Select a component</p>
         <h2>Explore the diagram</h2>
         <p>Click a CPU, GPU, memory pool, or connection to see what it represents.</p>
       </section>
+      <section id="usage-panel" class="inspector usage-panel" role="tabpanel" aria-labelledby="usage-tab" hidden></section>
       <footer class="main-footer"><span><i class="cpu"></i>CPU <i class="gpu"></i>GPU <i class="memory"></i>Memory <i
             class="accelerator"></i>AI accelerator</span><span>Conceptual layout · not to scale</span></footer>
     </main>
