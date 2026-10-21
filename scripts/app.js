@@ -30,16 +30,33 @@ function setMachineTab(tab) {
 }
 
 function renderUsage() {
-  const field = (key, label, attributes) => `<label>${label}<input name="${key}" value="${esc(usageValues[key])}" ${attributes}></label>`;
-  $("#usage-panel").innerHTML = `<div class="resource-builder"><h2>Configure your resources</h2><p>One Genoa + Hopper compute node · request only what your program can use.</p><form id="resource-form"><div class="resource-fields">${field("cpus", "CPU cores", 'type="number" min="1" max="192" step="1" required')}${field("memory", "System RAM (GiB)", 'type="number" min="1" max="768" step="1" required')}${field("gpus", "H200 GPUs", 'type="number" min="1" max="4" step="1" required')}${field("time", "Wall time (HH:MM:SS)", 'type="text" required')}${field("account", "Account (optional)", 'type="text" placeholder="Your Slurm account"')}</div></form><p class="resource-hint">RAM is CPU memory, not GPU memory. Each whole H200 provides 141 GB of GPU memory; GPU memories do not automatically combine. This template uses one task; your application must support multiple CPU cores or GPUs.</p><div class="usage-modes view-switch" role="group" aria-label="How to run"><button type="button" data-usage-mode="slurm" aria-pressed="${usageMode === "slurm"}">Slurm job</button><button type="button" data-usage-mode="interactive" aria-pressed="${usageMode === "interactive"}">Interactive</button></div></div><div id="usage-output"></div>`;
+  const field = (key, label, attributes) => {
+    const numeric = attributes.includes('type="number"');
+    const adjust = (delta, symbol) => `<button type="button" data-adjust="${key}" data-delta="${delta}" aria-label="${delta < 0 ? "Decrease" : "Increase"} ${label}">${symbol}</button>`;
+    return `<div class="resource-field"><label for="resource-${key}">${label}</label><div class="${numeric ? "resource-stepper" : "resource-input"}">${numeric ? adjust(-1, "−") : ""}<input id="resource-${key}" name="${key}" value="${esc(usageValues[key])}" ${attributes}>${numeric ? adjust(1, "+") : ""}</div></div>`;
+  };
+  $("#usage-panel").innerHTML = `<div class="resource-builder"><span class="usage-kicker">YOUR WORKSPACE</span><h2>Configure your resources</h2><p>One Genoa + Hopper compute node · request only what your program can use.</p><form id="resource-form"><div class="resource-fields">${field("cpus", "CPU cores", 'type="number" min="1" max="192" step="1" required')}${field("memory", "System RAM (GiB)", 'type="number" min="1" max="768" step="1" required')}${field("gpus", "H200 GPUs", 'type="number" min="1" max="4" step="1" required')}${field("time", "Wall time (HH:MM:SS)", 'type="text" required')}${field("account", "Account (optional)", 'type="text" placeholder="Your Slurm account"')}</div></form><p class="resource-hint">RAM is CPU memory, not GPU memory. Each whole H200 provides 141 GB of GPU memory; GPU memories do not automatically combine. This template uses one task; your application must support multiple CPU cores or GPUs.</p><div class="usage-modes" role="group" aria-label="How to run"><button type="button" data-usage-mode="slurm" aria-pressed="${usageMode === "slurm"}"><strong>Slurm job</strong><span>Submit a script and let it run</span></button><button type="button" data-usage-mode="interactive" aria-pressed="${usageMode === "interactive"}"><strong>Interactive</strong><span>Open a shell and work live</span></button></div></div><div id="usage-output"></div>`;
   updateUsage();
 }
 
 function updateUsage() {
   const result = buildUsage(state.current, usageValues, usageMode);
   generatedUsage = result.code || "";
-  const development = usageMode === "interactive" ? `<section class="dev-route"><h3>Quick development · shared node</h3><p>From an ICER gateway, connect with:</p><pre><code>ssh dev-amd24-h200</code></pre><p>This does not reserve the resources selected above. The development node is shared: two hours of aggregate CPU time or GPU access time, and an 80% node-memory cap for processes. Use the reserved session below for longer work or guaranteed allocations.</p></section>` : "";
-  $("#usage-output").innerHTML = `${development}<section class="generated-job"><div class="usage-code-heading"><h3>${usageMode === "slurm" ? "Your Slurm script" : "Reserved interactive session"}</h3><button type="button" class="secondary" id="copy-usage" ${result.error ? "disabled" : ""}>${usageMode === "slurm" ? "Copy script" : "Copy command"}</button></div>${result.error ? `<p class="usage-error" role="alert">${esc(result.error)}</p>` : `<pre><code>${esc(result.code)}</code></pre>`}<p id="copy-status" role="status"></p><p>${usageMode === "slurm" ? 'Save as <code>hopper.sbatch</code>, replace the example program and environment setup, then submit from an ICER gateway with <code>sbatch hopper.sbatch</code>.' : 'Run this command from an ICER gateway. Wait for allocation before running your program; type <code>exit</code> to release the session.'}</p></section><p class="usage-policy">The <code>nfh</code> constraint targets the four-GPU H200 configuration. Requests queue; they do not guarantee immediate availability. Slurm CPUs follow site scheduling configuration. RAM is an inventory ceiling, not a guarantee of allocatable memory; time, account, partition, and access policies may further restrict requests. This is a template, not a submitted or cluster-tested job.</p><p class="usage-sources"><a href="https://docs.icer.msu.edu/Requesting_GPUs/" target="_blank" rel="noopener">ICER GPU requests ↗</a> · <a href="https://docs.icer.msu.edu/Job_Constraints/" target="_blank" rel="noopener">Constraints ↗</a> · <a href="https://docs.icer.msu.edu/development_nodes/" target="_blank" rel="noopener">Development rules ↗</a></p>`;
+  const batch = usageMode === "slurm";
+  const development = !batch ? `<section class="dev-route"><span class="usage-kicker">JUST TRYING SOMETHING?</span><h3>Quick development · shared node</h3><p>From an ICER gateway, connect with:</p><pre><code>ssh dev-amd24-h200</code></pre><p>This does not reserve the resources selected above. The development node is shared: two hours of aggregate CPU time or GPU access time, and an 80% node-memory cap for processes. Use the reserved session above for longer work or guaranteed allocations.</p></section>` : "";
+  const steps = batch
+    ? '<li><strong>Save your script</strong><span>Copy into <code>hopper.sbatch</code> on ICER.</span></li><li><strong>Make it yours</strong><span>Replace the example program and add your environment setup.</span></li><li><strong>Submit from a gateway</strong><span><code>sbatch hopper.sbatch</code></span></li>'
+    : '<li><strong>Connect to ICER</strong><span>Open a terminal on an ICER gateway.</span></li><li><strong>Request your session</strong><span>Paste the command and wait for allocation before running your program.</span></li><li><strong>Finish cleanly</strong><span>Type <code>exit</code> to release the reserved session.</span></li>';
+  $("#usage-output").innerHTML = `
+    <section class="generated-job">
+      <div class="usage-code-heading"><div><span class="usage-kicker">${batch ? "BATCH WORKFLOW" : "RESERVED WORKSPACE"}</span><h3>${batch ? "Your Slurm script" : "Reserved interactive session"}</h3></div><button type="button" class="secondary" id="copy-usage" ${result.error ? "disabled" : ""}>${batch ? "Copy script" : "Copy command"} <span aria-hidden="true">⧉</span></button></div>
+      ${result.error ? `<p class="usage-error" role="alert">${esc(result.error)}</p>` : `<div class="usage-terminal"><div class="terminal-title"><span aria-hidden="true">● ● ●</span>${batch ? "hopper.sbatch" : "ICER gateway · bash"}</div><pre><code>${esc(result.code)}</code></pre></div>`}
+      <p id="copy-status" role="status"></p>
+      <ol class="usage-steps">${steps}</ol>
+    </section>
+    ${development}
+    <details class="usage-policy"><summary>Before you run · resource limits &amp; access</summary><p>The <code>nfh</code> constraint targets the four-GPU H200 configuration. Requests queue; they do not guarantee immediate availability. Slurm CPUs follow site scheduling configuration. RAM is an inventory ceiling, not a guarantee of allocatable memory; time, account, partition, and access policies may further restrict requests. This is a template, not a submitted or cluster-tested job.</p></details>
+    <div class="usage-sources"><a href="https://docs.icer.msu.edu/Requesting_GPUs/" target="_blank" rel="noopener">GPU requests ↗</a><a href="https://docs.icer.msu.edu/Job_Constraints/" target="_blank" rel="noopener">Constraints ↗</a><a href="https://docs.icer.msu.edu/development_nodes/" target="_blank" rel="noopener">Development rules ↗</a></div>`;
 }
 
 function esc(value) { return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
@@ -240,8 +257,20 @@ $("#usage-panel").addEventListener("input", (event) => {
   }
 });
 $("#usage-panel").addEventListener("click", async (event) => {
+  const adjust = event.target.closest("[data-adjust]");
+  if (adjust) {
+    const input = $(`#resource-${adjust.dataset.adjust}`);
+    const current = Number(input.value);
+    input.value = String(Math.min(Number(input.max), Math.max(Number(input.min), (Number.isFinite(current) ? current : Number(input.min)) + Number(adjust.dataset.delta))));
+    usageValues[input.name] = input.value;
+    updateUsage();
+  }
   const mode = event.target.closest("[data-usage-mode]");
-  if (mode) { usageMode = mode.dataset.usageMode; renderUsage(); }
+  if (mode) {
+    usageMode = mode.dataset.usageMode;
+    renderUsage();
+    $(`[data-usage-mode="${usageMode}"]`).focus();
+  }
   if (event.target.closest("#copy-usage") && generatedUsage) {
     try {
       await navigator.clipboard.writeText(generatedUsage);

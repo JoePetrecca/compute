@@ -114,7 +114,7 @@ test("every view and clickable component renders usable information", async () =
     localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
     document: {
       querySelector(key) {
-        if (!elements.has(key)) elements.set(key, { value: "", addEventListener() {}, showModal() {}, close() {}, setAttribute() {}, removeAttribute() {} });
+        if (!elements.has(key)) elements.set(key, { value: "", listeners: {}, addEventListener(type, handler) { this.listeners[type] = handler; }, focus() {}, showModal() {}, close() {}, setAttribute() {}, removeAttribute() {} });
         return elements.get(key);
       },
       querySelectorAll: () => []
@@ -134,7 +134,22 @@ test("every view and clickable component renders usable information", async () =
   assert.equal(elements.get("#usage-panel").hidden, false);
   assert.equal(elements.get("#inspector").hidden, true);
   assert.ok(elements.get("#usage-panel").innerHTML.includes("Configure your resources"));
+  assert.ok(elements.get("#usage-panel").innerHTML.includes('aria-label="Increase CPU cores"'));
+  assert.ok(elements.get("#usage-output").innerHTML.includes('class="usage-terminal"'));
+  assert.ok(elements.get("#usage-output").innerHTML.includes('class="usage-steps"'));
   assert.ok(elements.get("#usage-output").innerHTML.includes("sbatch hopper.sbatch"));
+  const cpuInput = { name: "cpus", value: "4", min: "1", max: "192" };
+  elements.set("#resource-cpus", cpuInput);
+  const adjustCpu = async (delta) => elements.get("#usage-panel").listeners.click({ target: { closest: selector => selector === "[data-adjust]" ? { dataset: { adjust: "cpus", delta: String(delta) } } : null } });
+  await adjustCpu(1);
+  assert.equal(cpuInput.value, "5");
+  assert.ok(elements.get("#usage-output").innerHTML.includes("--cpus-per-task=5"));
+  cpuInput.value = "192";
+  await adjustCpu(1);
+  assert.equal(cpuInput.value, "192");
+  cpuInput.value = "1";
+  await adjustCpu(-1);
+  assert.equal(cpuInput.value, "1");
   vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
   assert.ok(elements.get("#usage-output").innerHTML.includes("ssh dev-amd24-h200"));
   assert.ok(elements.get("#usage-output").innerHTML.includes("does not reserve"));
