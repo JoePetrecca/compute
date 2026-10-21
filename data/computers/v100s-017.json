@@ -1,5 +1,5 @@
 {
-  "id": "v100s-017", "label": "V100S · nvf-017", "group": "ICER · GPU", "cpu": "Intel Xeon Platinum 8260", "cores": 48, "memory": "565 GB",
+  "id": "v100s-017", "label": "Volta V100S · 565 GB RAM", "group": "ICER · GPU", "cpu": "Intel Xeon Platinum 8260", "cores": 48, "memory": "565 GB",
   "gpu": "V100S", "gpuCount": 4, "vram": "32 GB", "gpuForm": "PCIe", "nvlink": "Mixed; verify node", "ssd": "412 GB", "cluster": "amd20-v100",
   "nodeRange": "nvf-017", "nodeCount": 1, "sourceKey": "cluster"
 }

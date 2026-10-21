@@ -1,5 +1,5 @@
 {
-  "id": "a100-intel", "label": "A100 40 GB · nif", "group": "ICER · GPU", "cpu": "Intel Xeon 8358", "cores": 64, "memory": "256 GB",
+  "id": "a100-intel", "label": "Ampere A100 · 40 GB", "group": "ICER · GPU", "cpu": "Intel Xeon 8358", "cores": 64, "memory": "256 GB",
   "gpu": "A100", "gpuCount": 4, "vram": "40 GB", "gpuForm": "PCIe", "nvlink": "No", "ssd": "1.92 TB", "cluster": "intel21",
   "nodeRange": "nif-[000–005]", "nodeCount": 6, "sourceKey": "cluster"
 }

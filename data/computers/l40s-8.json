@@ -1,5 +1,5 @@
 {
-  "id": "l40s-8", "label": "L40S ×8 · nel", "group": "ICER · GPU", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
+  "id": "l40s-8", "label": "Ada Lovelace L40S · 8 GPUs", "group": "ICER · GPU", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
   "gpu": "L40S", "gpuCount": 8, "vram": "48 GB", "gpuForm": "PCIe", "nvlink": "No", "ssd": "960 GB", "cluster": "amd24",
   "nodeRange": "nel-[000–002]", "nodeCount": 3, "sourceKey": "cluster"
 }

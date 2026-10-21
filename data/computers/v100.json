@@ -1,5 +1,5 @@
 {
-  "id": "v100", "label": "V100 ×8 · nvl", "group": "ICER · GPU", "cpu": "Intel Xeon Gold 6148", "cores": 40, "memory": "367 GB",
+  "id": "v100", "label": "Volta V100 · 8 GPUs", "group": "ICER · GPU", "cpu": "Intel Xeon Gold 6148", "cores": 40, "memory": "367 GB",
   "gpu": "V100", "gpuCount": 8, "vram": "32 GB", "gpuForm": "PCIe", "nvlink": "Yes", "ssd": "413 GB", "cluster": "intel18-v100",
   "nodeRange": "nvl-[000–007]", "nodeCount": 8, "sourceKey": "cluster"
 }
