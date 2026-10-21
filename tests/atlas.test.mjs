@@ -129,6 +129,7 @@ test("every view and clickable component renders usable information", async () =
   vm.runInContext(app, context);
   await context.ready;
   assert.deepEqual(manifest.slice(0, 5), ["dev-amd24", "dev-amd24-h200", "dev-amd20", "dev-amd20-v100", "dev-intel18"]);
+  assert.deepEqual(manifest.slice(-4), ["grace-hopper", "grace-hopper-003", "grace-grace", "moria"]);
   assert.ok(elements.get("#computer-list").innerHTML.includes('<strong>dev-amd24</strong><small class="profile-subname">Dev · Genoa</small>'));
   assert.equal((elements.get("#computer-list").innerHTML.match(/class="pickaxe-glyph"/g) || []).length, 1);
   assert.match(elements.get("#computer-list").innerHTML, /data-id="moria"[^>]*><span class="profile-icon pickaxe-icon"/);

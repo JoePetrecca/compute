@@ -1,10 +1,10 @@
 [
   "dev-amd24", "dev-amd24-h200", "dev-amd20", "dev-amd20-v100", "dev-intel18",
-  "moria",
-  "grace-hopper", "grace-hopper-003", "grace-grace",
   "h200-4", "h200-8", "l40s-8", "a100-amd", "a100-intel", "v100s", "v100s-017", "v100",
   "genoa-768", "genoa-2300", "genoa-1500", "genoa-x",
   "acm", "acm-996", "acm-2005", "rome-493", "rome-996", "rome-2005",
   "skl-83", "skl-178", "skl-367", "skl-745", "skl-996", "vim-v3", "vim-v4",
-  "data-cpu", "data-gpu", "data-mig"
+  "data-cpu", "data-gpu", "data-mig",
+  "grace-hopper", "grace-hopper-003", "grace-grace",
+  "moria"
 ]
