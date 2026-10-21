@@ -6,7 +6,7 @@
   "cpu": "NVIDIA Grace",
   "architecture": "ARM64",
   "cores": 72,
-  "cpuSpecs": { "type": "NVIDIA Grace · Arm Neoverse V2", "cores": "72", "threads": "72 · one thread per core, no SMT", "cache": "1 MB L2 per core · 117 MB L3 per CPU", "cacheSource": "https://developer.nvidia.com/blog/nvidia-grace-cpu-superchip-architecture-in-depth/" },
+  "cpuSpecs": { "type": "NVIDIA Grace · Arm Neoverse V2", "cores": "72", "cache": "1 MB L2 per core · 117 MB L3 per CPU", "cacheSource": "https://developer.nvidia.com/blog/nvidia-grace-cpu-superchip-architecture-in-depth/" },
   "memory": "480 GB",
   "gpu": "GH200",
   "gpuCount": 1,

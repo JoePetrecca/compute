@@ -6,16 +6,16 @@
   "cpu": "AMD EPYC 7763",
   "architecture": "x86-64",
   "cores": 128,
-  "cpuSpecs": { "type": "2 × AMD EPYC 7763 · Zen 3", "cores": "128 total · 64 per CPU", "threads": "Up to 256 with SMT; allocated slots may differ", "cache": "256 MB L3 per CPU · 512 MB total", "cacheSource": "https://www.amd.com/en/products/processors/server/epyc/7003-series/amd-epyc-7763.html" },
+  "cpuSpecs": { "type": "2 × AMD EPYC 7763 · Zen 3", "cores": "128 total · 64 per CPU", "cache": "256 MB L3 per CPU · 512 MB total", "cacheSource": "https://www.amd.com/en/products/processors/server/epyc/7003-series/amd-epyc-7763.html" },
   "memory": "493 GB",
   "nodeRange": "acm-[000–047]",
   "nodes": ["acm-000 through acm-047"],
   "description": "CPU-focused ICER nodes for parallel simulations, data preparation, numerical libraries, and independent batch jobs.",
   "tidbit": "This profile describes one node in acm-000–047, not the combined cluster. A scheduler allocation may give your job only part of that node’s cores and memory.",
-  "goodFor": "Parallel CPU simulations, multithreaded numerical libraries, preprocessing, and batches of independent CPU tasks. Each node combines 128 physical EPYC cores with 493 GB of published job-available RAM.",
+  "goodFor": "Parallel CPU simulations, numerical libraries, preprocessing, and batches of independent CPU tasks. Each node combines 128 physical EPYC cores with 493 GB of published job-available RAM.",
   "limitations": "No compute GPU is included in this profile, so CUDA GPU work needs a different node. Serial code will not use 128 cores automatically. Memory-heavy jobs must fit their allocation; multiple nodes do not automatically share RAM.",
   "components": {
-    "cpu": { "title": "AMD EPYC 7763", "goodFor": "Parallel simulations, multithreaded numerical libraries, and batches of independent CPU tasks.", "limitations": "CUDA GPU workloads, AVX-512-only code, or expecting serial programs to use all 128 cores. SMT capability is not a guarantee of scheduler allocation." },
+    "cpu": { "title": "AMD EPYC 7763", "goodFor": "Parallel simulations, numerical libraries, and batches of independent CPU tasks.", "limitations": "CUDA GPU workloads, AVX-512-only code, or expecting serial programs to use all 128 cores." },
     "memory": { "title": "493 GB · memory available to jobs", "text": "ICER’s published table lists this memory capacity per node. Your job’s actual memory limit depends on the resources requested and allocated by the scheduler.", "tidbit": "Memory on different cluster nodes is not one automatic shared pool. Multi-node applications need explicit distributed communication." }
   },
   "source": { "label": "ICER · Cluster resources", "url": "https://docs.icer.msu.edu/Cluster_Resources/" }
