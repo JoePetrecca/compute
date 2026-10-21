@@ -1,0 +1,12 @@
+{
+  "id": "amd",
+  "label": "AMD",
+  "group": "Local machines",
+  "layout": "local",
+  "cpu": "AMD",
+  "architecture": "x86-64",
+  "memory": "System RAM",
+  "description": "A configurable local AMD computer for development, data preparation, and smaller jobs.",
+  "source": { "label": "AMD · Ryzen AI", "url": "https://www.amd.com/en/products/processors/business-systems/ryzen-ai.html" },
+  "localOptions": true
+}

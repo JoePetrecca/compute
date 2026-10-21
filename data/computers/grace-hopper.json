@@ -1,0 +1,19 @@
+{
+  "id": "grace-hopper",
+  "label": "Grace Hopper",
+  "group": "ICER",
+  "layout": "grace-hopper",
+  "cpu": "NVIDIA Grace",
+  "architecture": "ARM64",
+  "cores": 72,
+  "memory": "480 GB",
+  "gpu": "GH200",
+  "gpuCount": 1,
+  "vram": "96 GB",
+  "interconnect": "NVLink-C2C",
+  "nodes": ["nch-000", "nch-001", "nch-002"],
+  "nodeRange": "nch-[000–002]",
+  "description": "Grace CPU and Hopper GPU in one tightly connected superchip, suited to supported GPU work with substantial CPU–GPU interaction.",
+  "note": "Buy-in rules apply; non-owner jobs are limited to under four hours.",
+  "source": { "label": "ICER · Grace Hopper", "url": "https://docs.icer.msu.edu/Getting_Started_with_Grace_Hopper_and_Grace_Grace/" }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "intel",
+  "label": "Intel",
+  "group": "Local machines",
+  "layout": "local",
+  "cpu": "Intel",
+  "architecture": "x86-64",
+  "memory": "System RAM",
+  "description": "A configurable local Intel computer for development, data preparation, and smaller jobs.",
+  "source": { "label": "Intel · Integrated and discrete graphics", "url": "https://www.intel.com/content/www/us/en/support/articles/000057824/graphics.html" },
+  "localOptions": true
+}

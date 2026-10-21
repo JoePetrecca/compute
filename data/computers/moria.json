@@ -1,0 +1,18 @@
+{
+  "id": "moria",
+  "label": "Moria",
+  "group": "Lab machines",
+  "layout": "server",
+  "cpu": "AMD EPYC 7552",
+  "architecture": "x86-64",
+  "cores": 96,
+  "threads": 192,
+  "memory": "1 TiB",
+  "gpu": "RTX A4000",
+  "gpuCount": 2,
+  "vram": "16 GB",
+  "interconnect": "PCIe",
+  "nodeRange": "moria.egr.msu.edu",
+  "description": "Lab server with two RTX A4000 GPUs for CUDA development, manageable-size training and inference, rendering, and parallel CPU work.",
+  "source": { "label": "Moria hardware · supplied by Joe", "url": null }
+}

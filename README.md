@@ -1,12 +1,25 @@
 # Compute Atlas
 
-An interactive visual reference for local hardware, Apple Silicon, lab machines, and ICER cluster configurations.
+An interactive visual reference for local hardware, lab machines, and ICER cluster configurations.
 
 Visit the published site at [JoePetrecca.github.io/compute](https://JoePetrecca.github.io/compute/).
 
 ## Run locally
 
-Open `index.html` in a modern web browser. The site is fully self-contained: its data, styles, and scripts are included in the page.
+Serve the project directory with a local web server, then open the reported address in a modern browser:
+
+```sh
+python3 -m http.server
+```
+
+The browser loads individual computer profiles from `data/computers/`, so opening `index.html` directly from the filesystem will not work.
+
+## Project structure
+
+- `data/computers/` — one JSON file per computer profile
+- `scripts/app.js` — shared interface, interaction, and diagram rendering
+- `styles/atlas.css` — shared visual design
+- `Compute-Atlas.html` — the original full atlas, kept as an archive/reference
 
 ## Publish updates
 

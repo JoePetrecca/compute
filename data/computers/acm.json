@@ -1,0 +1,14 @@
+{
+  "id": "acm",
+  "label": "ACM CPU nodes",
+  "group": "ICER",
+  "layout": "server",
+  "cpu": "AMD EPYC 7763",
+  "architecture": "x86-64",
+  "cores": 128,
+  "memory": "493 GB",
+  "nodeRange": "acm-[000–047]",
+  "nodes": ["acm-000 through acm-047"],
+  "description": "CPU-focused ICER nodes for parallel simulations, data preparation, numerical libraries, and independent batch jobs.",
+  "source": { "label": "ICER · Cluster resources", "url": "https://docs.icer.msu.edu/Cluster_Resources/" }
+}
