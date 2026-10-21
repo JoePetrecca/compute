@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
-import { prepareProfiles } from "../scripts/profiles.js";
+import { prepareProfiles, expandNodes } from "../scripts/profiles.js";
 import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "../scripts/usage.js";
 
 const json = async path => JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), "utf8"));
@@ -30,7 +30,11 @@ test("every ICER configuration has correct SSH or single-node scheduled access",
       const { code, error } = buildUsage(p, values, mode, profiles);
       assert.equal(error, undefined, p.id);
       assert.ok(code.includes("--nodes=1"));
-      assert.ok(code.includes(`--nodelist=${config.nodes[0]}`));
+      if (config.anyNode) {
+        assert.equal(values.targetNode, "any");
+        assert.ok(!code.includes("--nodelist="));
+        if (config.exclude) assert.ok(code.includes(`--exclude=${config.exclude}`));
+      } else assert.ok(code.includes(`--nodelist=${config.nodes[0]}`));
       assert.ok(!code.includes("undefined") && !code.includes("NaN"));
       assert.equal(code.includes("--gpus="), Boolean(config.maxGpus), p.id);
       assert.ok(!code.includes("--nodelist=dev-"));
@@ -39,6 +43,39 @@ test("every ICER configuration has correct SSH or single-node scheduled access",
       assert.ok(buildUsage(p, { ...values, targetNode: node }, mode, profiles).code.includes(`--nodelist=${node}`));
     }
   }
+});
+
+test("any-node filtering keeps exactly the selected class within the published inventory", () => {
+  for (const p of profiles) {
+    const config = usageConfig(p, profiles);
+    if (!config?.anyNode) continue;
+    const excluded = new Set(config.excludedNodes);
+    const familyNodes = profiles.flatMap(other => {
+      const candidate = usageConfig(other, profiles);
+      return candidate && !candidate.development && candidate.constraint === config.constraint ? candidate.nodes : [];
+    });
+    assert.deepEqual(new Set(familyNodes.filter(node => !excluded.has(node))), new Set(config.nodes), p.id);
+    const expanded = config.exclude ? config.exclude.split(/,(?![^\[]*\])/).flatMap(expandNodes) : [];
+    assert.deepEqual(new Set(expanded), excluded, p.id);
+    const values = { ...usageValuesFor(p, profiles), wholeNode: true };
+    if (config.wholeNode) {
+      const code = buildUsage(p, values, "slurm", profiles).code;
+      assert.ok(code.includes("--nodes=1") && code.includes("--exclusive"));
+      assert.ok(!code.includes("--nodelist="));
+    }
+  }
+  const grace = profiles.find(p => p.id === "grace-hopper");
+  assert.deepEqual(new Set(usageConfig(grace, profiles).excludedNodes), new Set(["nch-003", "ncc-000"]));
+  const genoa = profiles.find(p => p.id === "genoa-768");
+  assert.ok(usageConfig(genoa, profiles).excludedNodes.includes("agg-048"));
+  assert.ok(!usageConfig(genoa, profiles).excludedNodes.includes("agg-000"));
+  const interactive = buildUsage(genoa, usageValuesFor(genoa, profiles), "interactive", profiles).code;
+  const args = execFileSync("bash", ["-c", `srun() { printf '%s\\n' "$@"; }\n${interactive}`], { encoding: "utf8" }).trim().split("\n");
+  assert.ok(args.includes(`--exclude=${usageConfig(genoa, profiles).exclude}`));
+  assert.ok(args.includes("--nodes=1"));
+  assert.ok(!args.some(arg => arg.startsWith("--nodelist=")));
+  const single = profiles.find(p => p.id === "grace-grace");
+  assert.ok(buildUsage(single, { ...usageValuesFor(single, profiles), targetNode: "any" }, "slurm", profiles).error);
 });
 
 test("Hopper templates preserve typed GPUs, system memory and CPU count on job steps", () => {
@@ -83,9 +120,9 @@ test("Data Machine requires its account, paired CPU units and proper MIG resourc
     const p = profiles.find(p => p.id === id);
     const values = usageValuesFor(p, profiles);
     assert.equal(values.account, "data-machine");
-    assert.ok(buildUsage(p, { ...values, account: "" }).error);
-    assert.ok(buildUsage(p, { ...values, cpus: "3" }).error);
-    assert.ok(buildUsage(p, values).code.includes("--account=data-machine"));
+    assert.ok(buildUsage(p, { ...values, account: "" }, "slurm", profiles).error);
+    assert.ok(buildUsage(p, { ...values, cpus: "3" }, "slurm", profiles).error);
+    assert.ok(buildUsage(p, values, "slurm", profiles).code.includes("--account=data-machine"));
   }
   const p = profiles.find(p => p.id === "data-mig");
   assert.equal(usageConfig(p).maxGpus, 28);

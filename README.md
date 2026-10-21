@@ -54,7 +54,9 @@ Run `node --test tests/*.test.mjs` to validate profile coverage, node ranges, ph
 
 ## Usage instructions
 
-Every ICER configuration has a **How to use this computer** tab; Moria retains its specifications-only panel. Development pages are SSH-only, without resource selectors or batch submissions. On compute configurations, the centered builder generates a single-node, single-task Slurm script or reserved interactive shell command with CPU, system RAM, GPU/slice, wall-time, account, and target-node settings. A target-node selector pins exactly **one** node from the selected configuration, never its whole node range. A busy selected node can increase queue time. Custom settings are retained per profile during the page session.
+Every ICER configuration has a **How to use this computer** tab; Moria retains its specifications-only panel. Development pages are SSH-only, without resource selectors or batch submissions. On compute configurations, the centered builder generates a single-node, single-task Slurm script or reserved interactive shell command with CPU, system RAM, GPU/slice, wall-time, account, and target-node settings. Multi-node configurations default to **Any node in this configuration**, or you can select a particular host. Both choices request exactly **one** node, never the whole node range. Pinning a busy host can increase queue time. Custom settings are retained per profile during the page session.
+
+Any-node mode omits `--nodelist` and uses the family's constraint plus `--exclude` for other configurations in that family, based on the atlas inventory. This preserves listed RAM, storage, and hardware variants; it does not blindly allow every node with the same CPU/GPU. Interactive exclusions are shell-quoted. The inventory is static: node additions or hardware changes require reviewing these filters. Specific-host mode uses a single `--nodelist` entry. Single-node configurations retain their one host; development pages remain SSH-only.
 
 Request logic and Grace environment setup live in `scripts/usage.js`:
 

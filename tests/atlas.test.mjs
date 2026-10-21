@@ -147,6 +147,8 @@ test("every view and clickable component renders usable information", async () =
   assert.equal(elements.get("#usage-panel").hidden, false);
   assert.equal(elements.get("#inspector").hidden, true);
   assert.ok(elements.get("#usage-panel").innerHTML.includes("Configure your resources"));
+  assert.ok(elements.get("#usage-panel").innerHTML.includes('value="any" selected'));
+  assert.ok(!elements.get("#usage-output").innerHTML.includes("--nodelist="));
   assert.equal(elements.get("#resource-form").adjacentPosition, "afterend");
   assert.ok(elements.get("#resource-form").adjacentHTML.includes("Advanced · whole-node request"));
   assert.ok(elements.get("#resource-form").adjacentHTML.includes("This can take a while."));
@@ -178,6 +180,9 @@ test("every view and clickable component renders usable information", async () =
   assert.ok(elements.get("#usage-output").innerHTML.includes("--cpus-per-task=1"));
   elements.get("#usage-panel").listeners.input({ target: { name: "targetNode", value: "nfh-005" } });
   assert.ok(elements.get("#usage-output").innerHTML.includes("--nodelist=nfh-005"));
+  elements.get("#usage-panel").listeners.input({ target: { name: "targetNode", value: "any" } });
+  assert.ok(!elements.get("#usage-output").innerHTML.includes("--nodelist="));
+  elements.get("#usage-panel").listeners.input({ target: { name: "targetNode", value: "nfh-005" } });
   vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
   assert.ok(elements.get("#usage-output").innerHTML.includes("ssh dev-amd24-h200"));
   assert.ok(elements.get("#usage-output").innerHTML.includes("does not reserve"));
@@ -217,7 +222,10 @@ test("every view and clickable component renders usable information", async () =
         assert.ok(!elements.get("#usage-output").innerHTML.includes("#SBATCH"));
         assert.ok(elements.get("#usage-output").innerHTML.includes("two hours of aggregate CPU time"));
       } else {
-        assert.ok(elements.get("#usage-output").innerHTML.includes(`--nodelist=${config.nodes[0]}`), profile.id);
+        if (config.anyNode && profile.id !== "h200-4") {
+          assert.ok(elements.get("#usage-panel").innerHTML.includes('value="any" selected'), profile.id);
+          assert.ok(!elements.get("#usage-output").innerHTML.includes("--nodelist="), profile.id);
+        } else assert.ok(elements.get("#usage-output").innerHTML.includes(`--nodelist=${config.nodes[0]}`), profile.id);
         vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
         assert.ok(elements.get("#usage-output").innerHTML.includes("--pty /bin/bash"));
         if (config.grace) {
