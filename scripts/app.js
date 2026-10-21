@@ -30,7 +30,7 @@ function renderList() {
   const query = $("#search").value.trim().toLowerCase();
   const visible = state.profiles.filter((p) => [p.label, p.group, p.cpu, p.gpu, p.nodeRange].filter(Boolean).join(" ").toLowerCase().includes(query));
   const groups = [...new Set(visible.map((p) => p.group))];
-  $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section><h2 class="group-title">${esc(group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${p.id === state.current?.id}"><strong>${esc(p.label)}</strong><small>${esc(subline(p))}</small></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
+  $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section><h2 class="group-title">${esc(group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${p.id === state.current?.id}"><span class="profile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3"/></svg></span><span><strong>${esc(p.label)}</strong><small>${esc(subline(p))}</small></span></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
 }
 
 function choose(id) {
@@ -54,7 +54,7 @@ function wire(path, label, x, y) { return `<path class="wire" d="${path}"/>${lab
 function localDiagram(p) {
   const blocks = [["cpu", "CPU", p.cpu]];
   if (state.local.integrated) blocks.push(["gpu", "GPU", "Integrated"]);
-  if (state.local.npu) blocks.push(["npu", "AI accelerator", "Supported models"]);
+  if (state.local.npu) blocks.push(["npu", "NPU", "AI accelerator"]);
   const width = 490 / blocks.length;
   let diagram = `<rect class="frame" x="40" y="60" width="600" height="250" rx="25"/><text class="wire-label" x="70" y="90">${esc(p.cpu)} processor</text>`;
   blocks.forEach(([kind, title, subtitle], index) => { diagram += part(kind, 70 + index * (width + 8), 125, width, 130, title, subtitle); });

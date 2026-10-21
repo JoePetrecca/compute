@@ -12,9 +12,9 @@
   <div class="app">
     <aside>
       <header class="sidebar-header">
-        <a class="brand" href="./" aria-label="Compute Atlas home"><span>▦</span> Compute Atlas</a>
+        <a class="brand" href="./" aria-label="Compute Atlas home"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="4" stroke="#7b8799" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="#b7cce5"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3" stroke="#7b8799" stroke-width="1.4"/></svg> Compute Atlas</a>
         <p>Local machines → ICER</p>
-        <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Find a computer" autocomplete="off"></label>
+        <label class="search"><input id="search" type="search" placeholder="Find a chip or node…" aria-label="Find a computer" autocomplete="off"></label>
       </header>
       <nav id="computer-list" aria-label="Computers"><p class="loading">Loading computers…</p></nav>
       <footer>Five profiles · October 2026</footer>
@@ -22,7 +22,7 @@
     <main>
       <header class="page-header">
         <div><p class="eyebrow" id="computer-group"></p><h1 id="computer-name">Compute Atlas</h1><p class="summary" id="computer-summary"></p></div>
-        <button id="details-button" class="secondary">Details</button>
+        <button id="details-button" class="secondary info" aria-label="Configuration details and sources">i</button>
       </header>
       <section id="controls" class="controls" hidden aria-label="Local machine options">
         <span class="architecture" id="architecture"></span>
