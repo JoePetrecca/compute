@@ -58,6 +58,12 @@ nav section { margin-bottom: 10px; }
 .computer strong { display: block; font-size: 12px; font-weight: 550; line-height: 1.4; }
 .computer small { display: block; color: #85858f; font-size: 10px; margin-top: 2px; }
 .computer[aria-current=true] small { color: #6087b5; }
+[data-group="ICER · GPU"] { --selected-bg: #eee3fa; --selected-text: #7135a0; --selected-icon-bg: #dfcaf2; --selected-muted: #81579f; }
+[data-group="ICER · Data Machine"] { --selected-bg: #fff0df; --selected-text: #9b4c0d; --selected-icon-bg: #f8d9b6; --selected-muted: #94663b; }
+[data-group="ICER · Development"] { --selected-bg: #fce5e5; --selected-text: #ac3030; --selected-icon-bg: #f3caca; --selected-muted: #a15b5b; }
+:is([data-group="ICER · GPU"], [data-group="ICER · Data Machine"], [data-group="ICER · Development"]) .computer[aria-current=true] { background: var(--selected-bg); color: var(--selected-text); }
+:is([data-group="ICER · GPU"], [data-group="ICER · Data Machine"], [data-group="ICER · Development"]) .computer[aria-current=true] .profile-icon { background: var(--selected-icon-bg); color: var(--selected-text); }
+:is([data-group="ICER · GPU"], [data-group="ICER · Data Machine"], [data-group="ICER · Development"]) .computer[aria-current=true] small { color: var(--selected-muted); }
 aside footer { padding: 12px 21px; border-top: 1px solid #e3e3e8; color: #8b8b94; font-size: 10px; }
 main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
