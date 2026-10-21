@@ -12,7 +12,7 @@
   "cachePerSocket": "192 MB L3",
   "threads": 192,
   "cpuSpecs": { "type": "2 × AMD EPYC 7552 · Zen 2", "cores": "96 total · 48 per CPU", "threads": "192 total · SMT enabled", "cache": "192 MB L3 per CPU · 384 MB total", "cacheSource": "https://www.amd.com/en/support/downloads/drivers.html/processors/epyc/epyc-7002-series/amd-epyc-7552.html" },
-  "memory": "1 TiB",
+  "memory": "1024 GB",
   "gpu": "RTX A4000",
   "gpuCount": 2,
   "vram": "16 GB",
@@ -20,7 +20,7 @@
   "nodeRange": "moria.egr.msu.edu",
   "description": "Lab server with two RTX A4000 GPUs for CUDA development, manageable-size training and inference, rendering, and parallel CPU work.",
   "tidbit": "Moria has two 48-core CPUs: 96 physical cores in total. Its 192 hardware threads let each core manage two instruction streams, not do twice as much work automatically.",
-  "goodFor": "CUDA development, independent GPU experiments that fit in 16 GB per card, and CPU analysis or preprocessing that benefits from 1 TiB of RAM.",
+  "goodFor": "CUDA development, independent GPU experiments that fit in 16 GB per card, and CPU analysis or preprocessing that benefits from 1024 GB of RAM.",
   "limitations": "Not a substitute for a large-memory scientific GPU: each RTX A4000 has 16 GB, weak double-precision throughput relative to compute-focused GPUs, and no NVLink. Communication-heavy multi-GPU training can be limited by PCIe.",
   "components": {
     "cpu-interconnect": { "title": "AMD Infinity Fabric · CPU-to-CPU link", "text": "", "goodFor": "Exchanging data and maintaining cache coherence between the two EPYC processors. Each CPU can access memory attached to the other.", "limitations": "Remote memory access can cost more than local access. NUMA-aware placement can matter; this diagram is conceptual, not a map of the board’s physical links." },
@@ -31,9 +31,9 @@
       "tidbit": "Two 16 GB cards do not automatically act like one 32 GB card. These GPUs communicate through PCIe rather than NVLink."
     },
     "memory": {
-      "title": "1 TiB · system RAM",
+      "title": "1024 GB · system RAM",
       "text": "Moria has a large CPU-side workspace for datasets, preprocessing, and memory-intensive analysis. This RAM is separate from each graphics card’s 16 GB.",
-      "tidbit": "TiB means tebibyte: 1 TiB is 1,024 GiB. Binary units such as GiB and TiB differ from decimal GB and TB."
+      "tidbit": "System RAM is CPU-side memory, not extra GPU-local memory. Each RTX A4000 still has its own 16 GB."
     }
   }
 }

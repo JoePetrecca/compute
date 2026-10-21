@@ -36,6 +36,7 @@ test("all archived ICER nodes remain represented without duplicates", async () =
 });
 
 test("physical core and slice capacities are distinct from allocatable resources", () => {
+  assert.equal(profiles.find((p) => p.id === "moria").memory, "1024 GB");
   assert.equal(profiles.find((p) => p.id === "data-cpu").cores, 128);
   const mig = profiles.find((p) => p.id === "data-mig");
   assert.equal(mig.gpuCount, 4);
