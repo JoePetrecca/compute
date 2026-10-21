@@ -103,6 +103,7 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .superchip-diagram .frame { fill: url(#superchip-gold); stroke: #ceb573; stroke-width: 1.5; }
 .superchip-diagram .cpu-box { fill: url(#grace-blue); stroke: #91b7df; }
 .superchip-diagram .gpu-box { fill: url(#hopper-purple); stroke: #b296d4; }
+.superchip-diagram .memory-box { fill: url(#memory-green); stroke: #98bfa4; }
 .superchip-diagram .cpu-subsystem { fill: #f0f6ff; stroke: #b1c9e5; }
 .superchip-diagram .subsystem-title { fill: #846b36; }
 .inspector { border: 1px solid #dce5f0; border-top: 3px solid #8fb4df; border-radius: 14px; background: #f9fafc; padding: 20px 24px; margin-top: 12px; min-height: 48px; box-shadow: 0 4px 18px #223b5b06; }

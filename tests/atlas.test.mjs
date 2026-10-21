@@ -119,7 +119,7 @@ test("every view and clickable component renders usable information", async () =
       assert.ok(!svg.includes("undefined") && !svg.includes("NaN"), profile.id);
       assert.equal(svg.includes('class="superchip-diagram"'), profile.group === "ICER · Superchips");
       if (profile.group === "ICER · Superchips") {
-        for (const gradient of ["grace-blue", "hopper-purple", "superchip-gold"]) assert.ok(svg.includes(`id="${gradient}"`));
+        for (const gradient of ["grace-blue", "hopper-purple", "memory-green", "superchip-gold"]) assert.ok(svg.includes(`id="${gradient}"`));
       }
       const gpuCount = [...svg.matchAll(/data-part="gpu"/g)].length;
       assert.equal(gpuCount, profile.gpuCount || (profile.localOptions ? 1 : 0), profile.id);
