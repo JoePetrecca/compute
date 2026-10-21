@@ -147,7 +147,7 @@ function componentFacts(p, kind) {
   if (kind === "cpu-0" || kind === "cpu-1") return [["Processor", p.cpu], ["Physical cores · this chip", p.coresPerSocket], ...(p.id === "moria" ? [["Hardware threads · this chip", p.threadsPerSocket]] : []), ["Cache · this chip", p.cachePerSocket]];
   if (kind === "cpu-interconnect") return [["Connection", p.cpuLink === "NVLink-C2C" ? "NVLink-C2C" : "Infinity Fabric · xGMI"], ["Connects", "CPU 1 ↔ CPU 2"], ["Purpose", "Coherent data and remote-memory access"], ["Physical link count", "Schematic; not an exact wiring map"]];
   if (kind === "cpu") return [["Processor type", p.cpuSpecs?.type || p.cpu], ["Physical cores", p.cpuSpecs?.cores || "Model-dependent"], ...(p.id === "moria" ? [["Thread capability", p.cpuSpecs.threads]] : []), ["Cache", p.cpuSpecs?.cache || "Model-dependent"]];
-  if (kind === "gpu" || kind === "discrete") return [["Processor", p.gpu || (kind === "gpu" ? "Integrated GPU" : "Not specified")], ["Physical GPU count", p.gpuCount || "Model-dependent"], ["Memory per physical GPU", p.vram || (kind === "gpu" ? "Shared system RAM" : "Model-dependent")], ...(p.mig ? [["Allocatable slice", `${p.sliceMemory} · ${p.slicesPerGpu} slices per GPU`]] : []), ["Host data path", p.interconnect || (kind === "discrete" ? "PCIe" : "On-processor")], ...(p.gpuForm ? [["GPU module / card", p.gpuForm]] : []), ...(p.nvlink ? [["GPU-to-GPU NVLink", p.nvlink]] : []), ...(hardware.gpus[p.gpu] ? [["CUDA compute capability", hardware.gpus[p.gpu].capability]] : [])];
+  if (kind === "gpu" || kind === "discrete") return [["Processor", p.gpu || (kind === "gpu" ? "Integrated GPU" : "Not specified")], ["Physical GPU count", p.gpuCount || "Model-dependent"], ["Memory per physical GPU", p.vram || (kind === "gpu" ? "Shared system RAM" : "Model-dependent")], ...gpuBandwidthFacts(p), ...(p.mig ? [["Allocatable slice", `${p.sliceMemory} · ${p.slicesPerGpu} slices per GPU`]] : []), ["Host data path", p.interconnect || (kind === "discrete" ? "PCIe" : "On-processor")], ...(p.gpuForm ? [["GPU module / card", p.gpuForm]] : []), ...(p.nvlink ? [["GPU-to-GPU NVLink", p.nvlink]] : []), ...(hardware.gpus[p.gpu] ? [["CUDA compute capability", hardware.gpus[p.gpu].capability]] : [])];
   if (kind === "gpu-interconnect") return [["GPU-to-GPU NVLink", p.nvlink], ["GPU count", p.gpuCount], ["Automatic memory pooling", "No"], ["Topology", "Verify on allocated node"]];
   if (kind === "memory") return [["Capacity", p.memory], ["Used by", p.layout === "grace-hopper" ? "Grace CPU / coherent access" : "CPU and host applications"], ["Scope", "Per machine / node"]];
   if (kind === "vram") return [["Capacity per GPU", p.vram || "Model-dependent"], ["Memory type", p.layout === "grace-hopper" ? "HBM (high-bandwidth memory)" : "Dedicated GPU memory"], ["Automatic pooling", "No"]];
@@ -155,12 +155,19 @@ function componentFacts(p, kind) {
   if (kind === "npu") return [["Device", "Model-dependent NPU"], ["Primary role", "Supported AI inference"], ["Runtime support", "Required"]];
   return [["Processor type", p.cpuSpecs?.type || p.cpu], ["Physical cores", p.cpuSpecs?.cores || "Model-dependent"], ...(p.id === "moria" ? [["Thread capability", p.cpuSpecs.threads]] : []), ["Cache", p.cpuSpecs?.cache || "Model-dependent"], ["System memory", p.memory], ["GPUs", p.gpu ? `${p.gpuCount} × ${p.gpu}` : p.localOptions ? "Configurable example" : "No compute GPU"], ...(p.ssd ? [["Published local storage", p.ssd]] : []), ...(p.nodeRange ? [["Node names", p.nodeRange]] : []), ...(p.nodeCount ? [["Nodes in this group", p.nodeCount]] : [])];
 }
+function gpuBandwidthFacts(p) {
+  const gpu = hardware.gpus[p.gpu];
+  return gpu?.memoryBandwidth ? [["GPU memory type", gpu.memoryType], ["Peak local memory bandwidth", gpu.memoryBandwidth], ["V100 / V100S comparison", gpu.bandwidthComparison]] : [];
+}
 function details() {
   const p = state.current;
   const fields = [["Processor", p.cpu], ["Architecture", p.architecture], ...(p.cores ? [["Physical CPU cores", p.cores]] : []), ...(p.id === "moria" ? [["Scheduler CPU slots", p.threads]] : []), ["Memory", p.memory], ...(p.gpu ? [["GPUs", `${p.gpuCount} × ${p.gpu}`], ["Memory per physical GPU", p.vram]] : []), ...(p.mig ? [["Memory per allocated slice", p.sliceMemory]] : []), ...(p.nodeRange ? [["Node names", p.nodeRange], ["Node count", p.nodeCount]] : []), ...(p.ssd ? [["Published local storage", p.ssd]] : []), ...(p.interconnect ? [["Host connection", p.interconnect]] : []), ...(p.nvlink ? [["GPU-to-GPU NVLink", p.nvlink]] : []), ...(p.group.startsWith("ICER") ? [["Inventory reviewed", p.reviewed], ["Resource scope", "Per node; not a live allocation or availability check"]] : [])];
+  fields.push(...gpuBandwidthFacts(p));
   $("#dialog-title").textContent = p.label;
   $("#dialog-content").innerHTML = `<dl class="details-grid">${fields.map(([name, value]) => `<dt>${esc(name)}</dt><dd>${esc(value)}</dd>`).join("")}</dl>${p.note ? `<p class="dialog-note">${esc(p.note)}</p>` : ""}${p.source?.url ? `<a class="source-link" href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(p.source.label)} ↗</a>` : `<p class="dialog-note">${esc(p.source?.label || "")}</p>`}`;
   $("#details-dialog").showModal();
+  const specSource = hardware.gpus[p.gpu]?.specSource;
+  if (specSource) $("#dialog-content").innerHTML += `<p><a class="source-link" href="${esc(specSource)}" target="_blank" rel="noopener">NVIDIA V100 / V100S specifications ↗</a></p>`;
 }
 
 $("#search").addEventListener("input", renderList);

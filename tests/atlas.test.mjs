@@ -65,6 +65,14 @@ test("L40S and H200 explain cooperation without implying automatic GPU pooling",
   assert.match(h200.components["gpu-interconnect"].limitations, /separate devices with separate memory/);
 });
 
+test("V100S bandwidth comparison is per GPU, not extra capacity or guaranteed speed", () => {
+  assert.equal(hardware.gpus.V100.memoryBandwidth, "900 GB/s per GPU");
+  assert.equal(hardware.gpus.V100S.memoryBandwidth, "1134 GB/s per GPU");
+  assert.equal(1134 / 900 - 1, 0.26);
+  assert.match(hardware.gpus.V100S.limitations, /not measured application speed/);
+  assert.equal(profiles.find((p) => p.id === "v100").vram, profiles.find((p) => p.id === "v100s").vram);
+});
+
 test("every view and clickable component renders usable information", async () => {
   const elements = new Map();
   const storage = new Map([["compute-sidebar-mode", "specs"]]);
@@ -109,6 +117,10 @@ test("every view and clickable component renders usable information", async () =
         const panel = elements.get("#inspector").innerHTML;
         assert.ok(!panel.includes("undefined") && !panel.includes("NaN"), `${profile.id}/${kind}`);
         assert.ok(panel.includes("Good for") && panel.includes("Not good for"));
+        if (kind === "gpu" && ["V100", "V100S"].includes(profile.gpu)) {
+          assert.ok(panel.includes("Peak local memory bandwidth"));
+          assert.ok(panel.includes(hardware.gpus[profile.gpu].memoryBandwidth));
+        }
         if (profile.id !== "moria") assert.ok(!/thread|SMT/i.test(panel), profile.id);
       }
     }
