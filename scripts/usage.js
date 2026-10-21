@@ -1,17 +1,17 @@
 import { expandNodes } from "./profiles.js";
 
-export const usageDefaults = { cpus: "4", memory: "32", gpus: "1", time: "01:00:00", account: "", wholeNode: false };
+export const usageDefaults = { cpus: "4", memory: "32", gpus: "1", time: "01:00:00", account: "", wholeNode: false, workload: "custom" };
+export const graceEnvironment = "source /cvmfs/software.eessi.io/versions/2023.06/init/bash && module use /opt/modules/all";
 
-const developmentTargets = {
-  "dev-amd24": "genoa-768", "dev-amd24-h200": "h200-4", "dev-amd20": "rome-996",
-  "dev-amd20-v100": "v100s", "dev-intel18": "skl-367"
-};
+export function graceSetup(workload) {
+  return `${graceEnvironment}\nmodule purge\n${workload === "cuda-sample" ? "module load CUDA-Samples\n\n# NVIDIA sample programs supplied by ICER\nmatrixMul\nmatrixMulCUBLAS" : "# Load your ARM-compatible project dependencies here.\n# For code compiled on Grace, load Compiled AFTER those dependencies:\nmodule load Compiled\n\n# Replace this with your actual ARM executable.\n./your_arm_program"}`;
+}
 
 export function usageConfig(profile, profiles = []) {
   if (!profile?.group?.startsWith("ICER")) return null;
   const development = profile.sourceKey === "development";
-  const target = development ? profiles.find(p => p.id === developmentTargets[profile.id]) : profile;
-  if (!target) return null;
+  if (development) return { development: true, target: profile, devNode: profile.id, wholeNode: false };
+  const target = profile;
   const nodes = target.nodes?.length ? target.nodes : expandNodes(target.nodeRange);
   const dataMachine = target.group === "ICER · Data Machine";
   const grace = target.cpu === "NVIDIA Grace";
@@ -23,7 +23,6 @@ export function usageConfig(profile, profiles = []) {
   const gpuType = target.mig ? "a100_slice" : target.gpu === "GH200" ? "" : target.gpu?.toLowerCase();
   const devNode = development ? profile.id : grace || dataMachine ? null : target.gpu === "H200" ? "dev-amd24-h200" : ["V100", "V100S"].includes(target.gpu) ? "dev-amd20-v100" : target.gpu ? null : target.cpu.includes("EPYC 9") ? "dev-amd24" : target.cpu.includes("EPYC") ? "dev-amd20" : "dev-intel18";
   const notes = ["One target node is pinned from this configuration. A busy node can mean a longer wait; choose another listed node if appropriate."];
-  if (development) notes.push(`The controls reserve resources on ${target.label}, not on the shared development node. Its CPU, RAM, and GPU configuration may differ from ${profile.id}.`);
   if (devNode && !development) notes.push("The suggested development node is for general workflow testing, not a guarantee of matching processors, GPU architecture, or memory. Rebuild or retest on the target hardware when needed.");
   if (grace) notes.push("Requires ARM64/aarch64-compatible software and environments. Non-owner jobs must be less than four hours; supplying an account name does not establish buy-in authorization. Initialize the Grace module environment after allocation; load your project's dependencies and then Compiled for locally compiled code.");
   if (dataMachine) notes.push("Data Machine account membership is required. CPU requests use scheduler CPU units and must be in pairs; these are not a physical-core count. Local NVMe is temporary: stage inputs and save results before the job ends. Burst-buffer setup is not generated here; consult the Data Machine guide.");
@@ -37,12 +36,19 @@ export function usageConfig(profile, profiles = []) {
 
 export function usageValuesFor(profile, profiles = []) {
   const config = usageConfig(profile, profiles);
+  if (config?.development) return { ...usageDefaults };
+  if (config?.grace) return { ...usageDefaults, cpus: config.maxGpus ? "72" : "4", memory: "10", time: "03:00:00", targetNode: config.nodes[0], workload: config.maxGpus ? "cuda-sample" : "custom" };
   return { ...usageDefaults, ...(config ? { cpus: String(Math.min(4, config.maxCpus)), memory: String(Math.min(32, config.maxMemory)), account: config.dataMachine ? "data-machine" : "", targetNode: config.nodes[0] } : {}) };
 }
 
 export function buildUsage(profile, values, mode = "slurm", profiles = []) {
   const config = usageConfig(profile, profiles);
   if (!config) return { error: "Usage instructions are available for supported ICER configurations only." };
+  if (config.development) {
+    if (mode !== "interactive") return { error: "Development nodes use interactive SSH access, not Slurm reservations." };
+    if (!/^dev-[A-Za-z0-9-]+$/.test(config.devNode)) return { error: "Invalid development-node hostname." };
+    return { code: `ssh ${config.devNode}` };
+  }
   const integer = (value, max) => /^\d+$/.test(String(value)) && Number(value) >= 1 && Number(value) <= max;
   const wholeNode = values.wholeNode === true;
   if (wholeNode && !config.wholeNode) return { error: "Whole-node requests are not supported for this MIG-slice profile." };
@@ -58,10 +64,13 @@ export function buildUsage(profile, values, mode = "slurm", profiles = []) {
   const node = values.targetNode ?? config.nodes[0];
   if (!config.nodes.includes(node) || !/^[A-Za-z0-9-]+$/.test(node)) return { error: "Choose one target node from this configuration." };
   if (!["slurm", "interactive"].includes(mode)) return { error: "Choose Slurm or Interactive." };
+  if (config.grace && (!["custom", "cuda-sample"].includes(values.workload ?? "custom") || (!config.maxGpus && values.workload === "cuda-sample"))) return { error: "Choose a program template supported by this Grace configuration." };
   const cpus = wholeNode ? config.maxCpus : Number(values.cpus);
   const options = ["--nodes=1", "--ntasks=1", ...(wholeNode ? ["--exclusive"] : []), `--cpus-per-task=${cpus}`, wholeNode ? "--mem=0" : `--mem=${Number(values.memory)}G`, ...(config.maxGpus ? [`--gpus=${config.gpuType ? `${config.gpuType}:` : ""}${wholeNode ? config.maxGpus : Number(values.gpus)}`] : []), `--constraint=${config.constraint}`, `--nodelist=${node}`, `--time=${values.time}`, ...(account ? [`--account=${account}`] : [])];
-  const setup = config.grace ? "# Initialize the ARM-compatible Grace module environment.\nsource /cvmfs/software.eessi.io/versions/2023.06/init/bash\nmodule use /opt/modules/all\n# Load project dependencies, then Compiled for locally compiled programs.\n" : "";
+  const program = config.grace
+    ? graceSetup(values.workload).replace(graceEnvironment, `${graceEnvironment} || exit $?`).replace(/^(matrixMul(?:CUBLAS)?|\.\/your_arm_program)$/gm, `srun --cpus-per-task=${cpus} $1`)
+    : `# Load your project's modules and activate its environment here.\n# Replace the example below with your actual program.\nsrun --cpus-per-task=${cpus} python your_program.py`;
   return { code: mode === "interactive"
     ? `srun ${options.join(" \\\n  ")} \\\n  --pty /bin/bash`
-    : `#!/bin/bash\n#SBATCH --job-name=${config.target.id}\n#SBATCH --output=${config.target.id}-%j.out\n${options.map(option => `#SBATCH ${option}`).join("\n")}\n\n${setup}# Load your project's modules and activate its environment here.\n# Replace the example below with your actual program.\nsrun --cpus-per-task=${cpus} python your_program.py\n` };
+    : `#!/bin/bash\n#SBATCH --job-name=${config.target.id}\n#SBATCH --output=${config.target.id}-%j.out\n${options.map(option => `#SBATCH ${option}`).join("\n")}\n\nset -e\n${program}\n` };
 }

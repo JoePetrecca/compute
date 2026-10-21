@@ -178,6 +178,12 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .usage-panel .usage-notice { padding: 16px; margin: 16px 0 20px; border: 1px solid #cfdef1; border-radius: 12px; background: #edf4fd; color: #456180; text-align: left; }
 .usage-notice p + p { margin-top: 10px; }
 .usage-notice pre { margin-top: 12px; }
+.grace-guide { margin-top: 22px; padding: 24px; border: 1px solid #ddd6bc; border-radius: 16px; background: #fffdf7; }
+.grace-guide > p { margin: 12px 0; }
+.grace-guide .usage-code-heading { margin: 22px 0 12px; }
+.usage-panel #copy-grace-setup { min-height: 46px; padding: 12px 16px; border: 1px solid #d8cba2; border-radius: 10px; color: #78612e; background: #fff7df; white-space: nowrap; }
+.usage-panel #copy-grace-setup:hover { background: #f5e9c6; }
+.dev-route p + p { margin-top: 12px; }
 .resource-stepper input { padding: 4px 0; text-align: center; appearance: textfield; -moz-appearance: textfield; }
 .resource-stepper input::-webkit-inner-spin-button, .resource-stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .resource-stepper button { flex: 0 0 44px; min-height: 44px; border: 0; border-radius: 8px; background: #edf2f9; color: #45668e; font-size: 22px; }

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 import { prepareProfiles, expandNodes, sidebarSubtitle } from "../scripts/profiles.js";
-import { buildUsage, usageDefaults, usageConfig, usageValuesFor } from "../scripts/usage.js";
+import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "../scripts/usage.js";
 
 const root = new URL("../", import.meta.url);
 const json = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
@@ -111,6 +111,7 @@ test("every view and clickable component renders usable information", async () =
     usageDefaults,
     usageConfig,
     usageValuesFor,
+    graceSetup,
     prepareProfiles,
     sidebarSubtitle,
     localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
@@ -206,18 +207,26 @@ test("every view and clickable component renders usable information", async () =
     assert.equal(elements.get("#usage-panel").hidden, profile.id === "moria");
     if (profile.id !== "moria") {
       const config = usageConfig(profile, profiles);
-      assert.ok(elements.get("#usage-output").innerHTML.includes(`--nodelist=${config.nodes[0]}`), profile.id);
       assert.ok(!elements.get("#usage-output").innerHTML.includes("undefined"), profile.id);
       assert.equal(elements.get("#usage-panel").innerHTML.includes('name="gpus"'), Boolean(config.maxGpus), profile.id);
       if (profile.mig) assert.ok(!elements.get("#usage-panel").innerHTML.includes('id="whole-node"'));
       if (profile.sourceKey === "development") {
         assert.ok(elements.get("#usage-output").innerHTML.includes(`ssh ${profile.id}`));
-        assert.ok(elements.get("#usage-panel").innerHTML.includes("apply only to a scheduled job"));
+        assert.ok(!elements.get("#usage-panel").innerHTML.includes('id="resource-form"'));
+        assert.ok(!elements.get("#usage-panel").innerHTML.includes("data-usage-mode"));
+        assert.ok(!elements.get("#usage-output").innerHTML.includes("#SBATCH"));
+        assert.ok(elements.get("#usage-output").innerHTML.includes("two hours of aggregate CPU time"));
+      } else {
+        assert.ok(elements.get("#usage-output").innerHTML.includes(`--nodelist=${config.nodes[0]}`), profile.id);
+        vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
+        assert.ok(elements.get("#usage-output").innerHTML.includes("--pty /bin/bash"));
+        if (config.grace) {
+          for (const text of ["Copy setup", "inside the allocated Grace shell", "Compiled", "file ./your_executable", "node-local", "Non-owner jobs", "ICER describes these nodes as beta"]) assert.ok(elements.get("#usage-output").innerHTML.includes(text), text);
+          assert.ok(!elements.get("#usage-output").innerHTML.includes("ssh dev-"));
+        }
+        vm.runInContext("usageMode = 'slurm'; updateUsage();", context);
+        assert.ok(elements.get("#usage-output").innerHTML.includes("#SBATCH"));
       }
-      vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
-      assert.ok(elements.get("#usage-output").innerHTML.includes("--pty /bin/bash"));
-      vm.runInContext("usageMode = 'slurm'; updateUsage();", context);
-      assert.ok(elements.get("#usage-output").innerHTML.includes("#SBATCH"));
     }
     for (const view of ["simple", "detailed"]) {
       vm.runInContext(`state.diagramView = '${view}'; choose('${profile.id}'); details();`, context);

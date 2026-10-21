@@ -1,5 +1,5 @@
 import { prepareProfiles, sidebarSubtitle } from "./profiles.js";
-import { buildUsage, usageDefaults, usageConfig, usageValuesFor } from "./usage.js";
+import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "./usage.js";
 const $ = (selector) => document.querySelector(selector);
 const state = { profiles: [], current: null, sidebarMode: readSidebarMode(), diagramView: "simple", local: { integrated: true, npu: false, discrete: false } };
 
@@ -42,6 +42,12 @@ function renderUsage() {
     usageMode = saved?.mode || (config.development ? "interactive" : "slurm");
     usageProfileId = p.id;
   }
+  if (config.development) {
+    usageMode = "interactive";
+    $("#usage-panel").innerHTML = '<div id="usage-output"></div>';
+    updateUsage();
+    return;
+  }
   const field = (key, label, attributes) => {
     const wholeResource = usageValues.wholeNode && ["cpus", "memory", "gpus"].includes(key);
     const displayValue = wholeResource ? { cpus: config.maxCpus, memory: "All available", gpus: config.maxGpus }[key] : usageValues[key];
@@ -53,19 +59,20 @@ function renderUsage() {
   const gpuHint = config.target.mig ? `Each allocated MIG slice has ${config.target.sliceMemory}; slices do not automatically combine memory.` : config.maxGpus ? `RAM is CPU memory, not GPU memory. Each ${config.target.gpu} has ${config.target.vram} of GPU-local memory; multiple GPUs do not automatically combine memory.` : "CPU-only configuration: no compute GPU is requested.";
   $("#usage-panel").innerHTML = `
     <div class="resource-builder"><span class="usage-kicker">YOUR WORKSPACE</span>
-      <h2>${config.development ? "Reserve matching compute resources" : "Configure your resources"}</h2>
+      <h2>Configure your resources</h2>
       <p>${esc(config.target.label)} · one compute node · request only what your program can use.</p>
-      ${config.development ? `<p class="usage-notice">SSH uses the shared development node. These resource controls apply only to a scheduled job on ${esc(config.target.label)}.</p>` : ""}
+      ${config.grace ? `<p class="usage-notice">${config.maxGpus ? "Grace Hopper is an ARM CPU + GH200 GPU superchip—not an x86 H200 node." : "Grace–Grace is an ARM CPU-only superchip, with no GPU."} Uses <code>NOAUTO:grace</code>. Start with ICER's three-hour example; non-owner jobs must be under four hours.</p>` : ""}
       <form id="resource-form"><div class="resource-fields">
         ${field("cpus", config.dataMachine ? "Scheduler CPUs (pairs)" : "CPU cores", `type="number" min="${config.cpuStep}" max="${config.maxCpus}" step="${config.cpuStep}" required`)}
         ${field("memory", "System RAM (GiB)", `type="number" min="1" max="${config.maxMemory}" step="1" required`)}
         ${config.maxGpus ? field("gpus", config.target.mig ? "A100 MIG slices" : `${config.target.gpu} GPUs`, `type="number" min="1" max="${config.maxGpus}" step="1" required`) : ""}
         ${field("time", "Wall time (HH:MM:SS)", 'type="text" required')}
+        ${config.grace && config.maxGpus ? `<div class="resource-field"><label for="resource-workload">Program template</label><div class="resource-input"><select id="resource-workload" name="workload"><option value="cuda-sample" ${usageValues.workload === "cuda-sample" ? "selected" : ""}>ICER CUDA sample</option><option value="custom" ${usageValues.workload === "custom" ? "selected" : ""}>My ARM program</option></select></div></div>` : ""}
         <div class="resource-field"><label for="resource-targetNode">Target node</label><div class="resource-input"><select id="resource-targetNode" name="targetNode">${config.nodes.map(node => `<option value="${esc(node)}" ${node === usageValues.targetNode ? "selected" : ""}>${esc(node)}</option>`).join("")}</select></div></div>
         ${field("account", config.dataMachine ? "Required Slurm account" : "Account (optional)", `type="text" placeholder="Your Slurm account" ${config.dataMachine ? "readonly required" : ""}`)}
       </div></form>
       <p class="resource-hint">${esc(gpuHint)} This template uses one task; your application must support multiple CPU cores or GPUs. The selected target is a single node, not the entire configuration's node range.</p>
-      <div class="usage-modes" role="group" aria-label="How to run"><button type="button" data-usage-mode="slurm" aria-pressed="${usageMode === "slurm"}"><strong>Slurm job</strong><span>Submit a script and let it run</span></button><button type="button" data-usage-mode="interactive" aria-pressed="${usageMode === "interactive"}"><strong>Interactive</strong><span>${config.development ? "Shared SSH or reserved shell" : "Open a shell and work live"}</span></button></div>
+      <div class="usage-modes" role="group" aria-label="How to run"><button type="button" data-usage-mode="slurm" aria-pressed="${usageMode === "slurm"}"><strong>Slurm job</strong><span>Submit a script and let it run</span></button><button type="button" data-usage-mode="interactive" aria-pressed="${usageMode === "interactive"}"><strong>Interactive</strong><span>Open a shell and work live</span></button></div>
     </div><div id="usage-output"></div>`;
   updateUsage();
   if (config.wholeNode) $("#resource-form").insertAdjacentHTML("afterend", `<details class="whole-node-control" ${usageValues.wholeNode ? "open" : ""}><summary>Advanced · whole-node request</summary><div class="whole-node-options"><button type="button" id="whole-node" aria-pressed="${usageValues.wholeNode}">Whole node <span aria-hidden="true">${usageValues.wholeNode ? "✓" : "+"}</span></button><p>Exclusive access · ${config.maxCpus} requested CPUs${config.maxGpus ? ` · ${config.maxGpus} ${esc(config.target.gpu)} GPUs` : ""} · all scheduler-available RAM (--mem=0).</p><p class="whole-node-warning"><strong>This can take a while.</strong> Reserving an entire node can mean a much longer queue wait. Only request it if your workload needs the whole machine.</p></div></details>`);
@@ -74,6 +81,19 @@ function renderUsage() {
 function updateUsage() {
   const config = usageConfig(state.current, state.profiles);
   if (!config) return;
+  if (config.development) {
+    generatedUsage = buildUsage(state.current, usageValues, "interactive", state.profiles).code || "";
+    $("#usage-output").innerHTML = `
+      <div class="resource-builder"><span class="usage-kicker">INTERACTIVE DEVELOPMENT</span><h2>Connect and start working</h2><p>${esc(config.devNode)} · shared development node · no scheduler request needed.</p></div>
+      <section class="generated-job"><div class="usage-code-heading"><div><span class="usage-kicker">FROM AN ICER GATEWAY</span><h3>Your SSH command</h3></div><button type="button" class="secondary" id="copy-usage">Copy SSH command <span aria-hidden="true">⧉</span></button></div>
+        <div class="usage-terminal"><div class="terminal-title"><span aria-hidden="true">● ● ●</span>ICER gateway · bash</div><pre><code>${esc(generatedUsage)}</code></pre></div><p id="copy-status" role="status"></p>
+        <ol class="usage-steps"><li><strong>Connect to ICER</strong><span>Open a terminal on an ICER gateway.</span></li><li><strong>Open the development node</strong><span>Paste this command, then load your project's modules or environment.</span></li><li><strong>Develop and disconnect</strong><span>Compile, debug, or test your code. Type <code>exit</code> when finished.</span></li></ol>
+      </section>
+      <aside class="usage-notice"><h3>Shared access—not a reservation</h3><p>SSH does not reserve CPUs, RAM, or GPUs. There are no resource selectors or batch submissions on this page. Use the separate compute-node pages when your workload needs a scheduled allocation.</p></aside>
+      <section class="dev-route"><h3>Development limits</h3><p>Processes exceeding two hours of aggregate CPU time or two hours of GPU access time are killed without warning. For example, using 12 CPUs at 100% consumes two CPU-hours in about 10 minutes.</p><p>Processes using more than 80% of the node's total RAM are also killed. Do not treat the displayed hardware capacity as your personal allocation.</p></section>
+      <p class="usage-sources"><a href="https://docs.icer.msu.edu/development_nodes/" target="_blank" rel="noopener">ICER development-node instructions ↗</a><a href="https://docs.icer.msu.edu/Open_OnDemand/" target="_blank" rel="noopener">OnDemand Development Nodes ↗</a></p>`;
+    return;
+  }
   const result = buildUsage(state.current, usageValues, usageMode, state.profiles);
   generatedUsage = result.code || "";
   const batch = usageMode === "slurm";
@@ -83,13 +103,14 @@ function updateUsage() {
     : '<li><strong>Connect to ICER</strong><span>Open a terminal on an ICER gateway.</span></li><li><strong>Request your session</strong><span>Paste the command and wait for allocation before running your program.</span></li><li><strong>Finish cleanly</strong><span>Type <code>exit</code> to release the reserved session.</span></li>';
   $("#usage-output").innerHTML = `
     ${config.development ? development : ""}
-    ${config.grace || config.dataMachine ? `<aside class="usage-notice"><h3>${config.grace ? "ARM software & buy-in access" : "Data Machine access"}</h3><p>${esc(config.grace ? "Use ARM64-compatible binaries and environments. Non-owner jobs must be under four hours." : "Approved data-machine account membership is required. Local NVMe is temporary; save your results before the job ends.")}</p>${config.grace ? '<p>After allocation, initialize modules with:</p><pre><code>source /cvmfs/software.eessi.io/versions/2023.06/init/bash\nmodule use /opt/modules/all</code></pre>' : ""}${config.target.mig ? '<p>GPU requests allocate 10 GB MIG slices, not whole A100 cards. Live partitioning must be verified.</p>' : ""}</aside>` : ""}
+    ${config.dataMachine ? `<aside class="usage-notice"><h3>Data Machine access</h3><p>Approved data-machine account membership is required. Local NVMe is temporary; save your results before the job ends.</p>${config.target.mig ? '<p>GPU requests allocate 10 GB MIG slices, not whole A100 cards. Live partitioning must be verified.</p>' : ""}</aside>` : ""}
     <section class="generated-job">
       <div class="usage-code-heading"><div><span class="usage-kicker">${batch ? "BATCH WORKFLOW" : "RESERVED WORKSPACE"}</span><h3>${batch ? "Your Slurm script" : "Reserved interactive session"}</h3></div><button type="button" class="secondary" id="copy-usage" ${result.error ? "disabled" : ""}>${batch ? "Copy script" : "Copy command"} <span aria-hidden="true">⧉</span></button></div>
       ${result.error ? `<p class="usage-error" role="alert">${esc(result.error)}</p>` : `<div class="usage-terminal"><div class="terminal-title"><span aria-hidden="true">● ● ●</span>${batch ? esc(config.filename) : "ICER gateway · bash"}</div><pre><code>${esc(result.code)}</code></pre></div>`}
       <p id="copy-status" role="status"></p>
       <ol class="usage-steps">${steps}</ol>
     </section>
+    ${config.grace ? `<section class="grace-guide"><span class="usage-kicker">ICER'S GRACE WORKFLOW</span><h3>${batch ? "What this script sets up" : "After your interactive allocation starts"}</h3><p>Existing x86_64 executables and conda environments will not run unchanged. Build or install an ARM64 environment on Grace; check compiled programs with <code>file ./your_executable</code>.</p><div class="usage-code-heading"><h3>${usageValues.workload === "cuda-sample" ? "Run ICER's CUDA samples" : "Prepare your ARM application"}</h3>${!batch ? '<button type="button" class="secondary" id="copy-grace-setup">Copy setup</button>' : ""}</div><pre><code>${esc(graceSetup(usageValues.workload))}</code></pre><p id="grace-copy-status" role="status"></p><p>${batch ? "These commands are already included in the script above. " : "Run these commands inside the allocated Grace shell, not on the gateway. "}Initialization switches away from the main cluster's incompatible module environment. For locally compiled code, load your project dependencies first and <code>Compiled</code> last.</p><aside class="usage-notice"><h3>Storage &amp; buy-in rules</h3><p>ICER warns that home and research storage can be slower on Grace. Consider staging data and code to node-local <code>/tmp</code>; copy results back before the job ends. Temporary storage is not permanent.</p><p>Non-owner jobs must be less than four hours. Only set a buy-in account if you are authorized to use it. ICER describes these nodes as beta with a minimal software installation; available modules differ from the x86 cluster.</p></aside></section>` : ""}
     ${!config.development ? development : ""}
     <details class="usage-policy"><summary>Before you run · resource limits &amp; access</summary><p>Targeting <code>${esc(usageValues.targetNode)}</code> with <code>${esc(config.constraint)}</code>. Requests queue; they do not guarantee immediate availability. Slurm CPUs follow site scheduling configuration. RAM limits are approximate inventory ceilings, not guarantees of allocatable memory; time, account, partition, and access policies may further restrict requests. This is a template, not a submitted or cluster-tested job.</p>${config.notes.map(note => `<p>${esc(note)}</p>`).join("")}</details>
     <div class="usage-sources"><a href="https://docs.icer.msu.edu/Job_Constraints/" target="_blank" rel="noopener">Constraints ↗</a>${config.maxGpus ? '<a href="https://docs.icer.msu.edu/Requesting_GPUs/" target="_blank" rel="noopener">GPU requests ↗</a>' : ""}${config.devNode ? '<a href="https://docs.icer.msu.edu/development_nodes/" target="_blank" rel="noopener">Development rules ↗</a>' : ""}${config.grace ? '<a href="https://docs.icer.msu.edu/Getting_Started_with_Grace_Hopper_and_Grace_Grace/" target="_blank" rel="noopener">Grace guide ↗</a>' : ""}${config.dataMachine ? '<a href="https://docs.icer.msu.edu/Using_the_Data_Machine/" target="_blank" rel="noopener">Data Machine guide ↗</a>' : ""}</div>`;
@@ -338,6 +359,12 @@ $("#usage-panel").addEventListener("click", async (event) => {
       await navigator.clipboard.writeText(generatedUsage);
       $("#copy-status").textContent = "Copied.";
     } catch { $("#copy-status").textContent = "Clipboard unavailable. Select and copy the code above."; }
+  }
+  if (event.target.closest("#copy-grace-setup") && usageConfig(state.current, state.profiles)?.grace) {
+    try {
+      await navigator.clipboard.writeText(graceSetup(usageValues.workload));
+      $("#grace-copy-status").textContent = "Copied. Run inside your allocated Grace shell.";
+    } catch { $("#grace-copy-status").textContent = "Clipboard unavailable. Select and copy the setup above."; }
   }
 });
 $("#sidebar-mode-controls").addEventListener("click", (event) => {

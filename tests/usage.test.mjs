@@ -3,14 +3,14 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { prepareProfiles } from "../scripts/profiles.js";
-import { buildUsage, usageDefaults, usageConfig, usageValuesFor } from "../scripts/usage.js";
+import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "../scripts/usage.js";
 
 const json = async path => JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), "utf8"));
 const ids = await json("data/computers.json");
 const profiles = prepareProfiles(await Promise.all(ids.map(id => json(`data/computers/${id}.json`))), await json("data/hardware.json"));
 const profile = profiles.find(p => p.id === "h200-4");
 
-test("every ICER configuration generates valid single-node batch and interactive templates", () => {
+test("every ICER configuration has correct SSH or single-node scheduled access", () => {
   assert.equal(profiles.filter(p => usageConfig(p, profiles)).length, 36);
   for (const p of profiles) {
     if (p.id === "moria") {
@@ -20,6 +20,12 @@ test("every ICER configuration generates valid single-node batch and interactive
     }
     const config = usageConfig(p, profiles);
     const values = usageValuesFor(p, profiles);
+    if (config.development) {
+      assert.equal(buildUsage(p, values, "interactive").code, `ssh ${p.id}`);
+      execFileSync("bash", ["-n"], { input: buildUsage(p, values, "interactive").code });
+      assert.ok(buildUsage(p, values, "slurm").error);
+      continue;
+    }
     for (const mode of ["slurm", "interactive"]) {
       const { code, error } = buildUsage(p, values, mode, profiles);
       assert.equal(error, undefined, p.id);
@@ -58,15 +64,16 @@ test("invalid requests and shell injection cannot produce runnable templates", (
 test("whole-node requests are exclusive except for MIG and preserve custom settings", () => {
   for (const p of profiles.filter(p => p.group.startsWith("ICER"))) {
     const config = usageConfig(p, profiles);
+    if (config.development) continue;
     const values = { ...usageValuesFor(p, profiles), wholeNode: true };
+    const before = { ...values };
     for (const mode of ["slurm", "interactive"]) {
       const result = buildUsage(p, values, mode, profiles);
       if (p.mig) { assert.ok(result.error); continue; }
       assert.ok(!result.error, p.id);
       for (const option of ["--exclusive", `--cpus-per-task=${config.maxCpus}`, "--mem=0"]) assert.ok(result.code.includes(option));
       if (config.maxGpus) assert.ok(result.code.includes(`--gpus=${config.gpuType ? config.gpuType + ":" : ""}${config.maxGpus}`));
-      assert.equal(values.cpus, "4");
-      assert.equal(values.memory, "32");
+      assert.deepEqual(values, before);
     }
   }
 });
@@ -95,17 +102,29 @@ test("Grace uses ARM setup, special constraints and untargeted GPU type; CPU Gra
     assert.ok(code.includes("source /cvmfs/software.eessi.io/versions/2023.06/init/bash"));
     assert.equal(code.includes("--gpus=1"), id !== "grace-grace");
     assert.ok(buildUsage(p, { ...values, time: "04:00:00" }).error);
+    assert.equal(values.time, "03:00:00");
+    assert.equal(values.memory, "10");
+    if (p.gpu) {
+      assert.equal(values.cpus, "72");
+      assert.ok(code.includes("module load CUDA-Samples"));
+      assert.ok(code.includes("srun --cpus-per-task=72 matrixMulCUBLAS"));
+      assert.ok(!code.includes("python your_program.py"));
+      const custom = buildUsage(p, { ...values, workload: "custom" }).code;
+      assert.ok(custom.includes("module load Compiled"));
+      assert.ok(custom.includes("./your_arm_program"));
+    } else assert.ok(buildUsage(p, { ...values, workload: "cuda-sample" }).error);
+    execFileSync("bash", ["-n"], { input: graceSetup(values.workload) });
   }
   for (const p of profiles.filter(p => p.id.startsWith("vim-"))) assert.ok(buildUsage(p, usageValuesFor(p)).code.includes("--constraint=NOAUTO:vim"));
 });
 
-test("development pages generate compute allocations, never dev-node reservations", () => {
-  const expected = { "dev-amd24": "genoa-768", "dev-amd24-h200": "h200-4", "dev-amd20": "rome-996", "dev-amd20-v100": "v100s", "dev-intel18": "skl-367" };
-  for (const [id, target] of Object.entries(expected)) {
-    const p = profiles.find(p => p.id === id);
+test("development pages are SSH-only, with no batch or whole-node reservations", () => {
+  for (const p of profiles.filter(p => p.sourceKey === "development")) {
     const config = usageConfig(p, profiles);
-    assert.equal(config.target.id, target);
-    assert.equal(config.devNode, id);
-    assert.ok(buildUsage(p, usageValuesFor(p, profiles), "slurm", profiles).code.includes(`--nodelist=${config.nodes[0]}`));
+    assert.equal(config.target.id, p.id);
+    assert.equal(config.devNode, p.id);
+    assert.equal(config.wholeNode, false);
+    assert.equal(buildUsage(p, usageValuesFor(p), "interactive").code, `ssh ${p.id}`);
+    assert.ok(buildUsage(p, { ...usageDefaults, wholeNode: true }, "slurm").error);
   }
 });

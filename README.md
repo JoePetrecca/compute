@@ -54,13 +54,13 @@ Run `node --test tests/*.test.mjs` to validate profile coverage, node ranges, ph
 
 ## Usage instructions
 
-Every ICER configuration has a **How to use this computer** tab; Moria retains its specifications-only panel. The centered builder generates a single-node, single-task Slurm script or reserved interactive shell command with CPU, system RAM, GPU/slice, wall-time, account, and target-node settings. A target-node selector pins exactly **one** node from the selected configuration, never its whole node range. A busy selected node can increase queue time. Custom settings are retained per profile during the page session.
+Every ICER configuration has a **How to use this computer** tab; Moria retains its specifications-only panel. Development pages are SSH-only, without resource selectors or batch submissions. On compute configurations, the centered builder generates a single-node, single-task Slurm script or reserved interactive shell command with CPU, system RAM, GPU/slice, wall-time, account, and target-node settings. A target-node selector pins exactly **one** node from the selected configuration, never its whole node range. A busy selected node can increase queue time. Custom settings are retained per profile during the page session.
 
-Request logic and development-to-compute mappings live in `scripts/usage.js`:
+Request logic and Grace environment setup live in `scripts/usage.js`:
 
-- Development pages show shared SSH access first in Interactive mode. Resource controls target a named, similar compute configuration, whose memory or hardware may differ. SSH does not reserve resources. A100/L40S and Grace/Data Machine pages do not invent matching development hardware.
+- Development pages show only SSH access, gateway/OnDemand instructions, and usage limits. SSH does not reserve resources. For scheduled allocations, use the separate compute-node pages. A100/L40S and Grace/Data Machine pages do not invent matching development hardware.
 - CPU-only configurations omit GPU controls/directives. GPU profiles request the appropriate type; Grace Hopper follows ICER's untyped GPU request example under `NOAUTO:grace`.
-- Grace and VIM use their documented `NOAUTO` constraints. Grace scripts initialize the ARM module environment; software must be ARM-compatible and non-owner jobs must be under four hours.
+- Grace and VIM use their documented `NOAUTO` constraints. Grace Hopper defaults to ICER's 72-CPU, 10-GiB, three-hour CUDA-sample example, with a selectable custom ARM executable template. Grace–Grace remains CPU-only. Grace batch scripts initialize EESSI and `/opt/modules/all`; interactive mode has a separate, copyable setup to run **after** allocation. Custom compiled-code templates load `Compiled` after project dependencies. The guide explains incompatible x86 conda environments, slow home/research storage, temporary `/tmp` staging, beta software support, and non-owner jobs under four hours. These requirements do not apply to the x86 H200 nodes.
 - Data Machine requires approved `data-machine` account membership and even scheduler-CPU requests. MIG uses `a100_slice` and 10 GB slices, not full cards; whole-node requests are unavailable for that profile. Live MIG partitioning remains unverified.
 - Whole-node requests are under Advanced with a queue warning, using `--exclusive` and `--mem=0`. Memory limits for custom requests are approximate inventory ceilings (published TB values use 1000 GB per TB), not guarantees of scheduler-available GiB.
 
