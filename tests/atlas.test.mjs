@@ -114,7 +114,7 @@ test("every view and clickable component renders usable information", async () =
     localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
     document: {
       querySelector(key) {
-        if (!elements.has(key)) elements.set(key, { value: "", listeners: {}, addEventListener(type, handler) { this.listeners[type] = handler; }, focus() {}, showModal() {}, close() {}, setAttribute() {}, removeAttribute() {} });
+        if (!elements.has(key)) elements.set(key, { value: "", listeners: {}, addEventListener(type, handler) { this.listeners[type] = handler; }, insertAdjacentHTML(position, html) { this.adjacentHTML = html; }, focus() {}, showModal() {}, close() {}, setAttribute() {}, removeAttribute() {} });
         return elements.get(key);
       },
       querySelectorAll: () => []
@@ -150,6 +150,15 @@ test("every view and clickable component renders usable information", async () =
   cpuInput.value = "1";
   await adjustCpu(-1);
   assert.equal(cpuInput.value, "1");
+  const toggleWholeNode = async () => elements.get("#usage-panel").listeners.click({ target: { closest: selector => selector === "#whole-node" ? {} : null } });
+  await toggleWholeNode();
+  assert.ok(elements.get("#resource-form").adjacentHTML.includes('aria-pressed="true"'));
+  assert.ok(elements.get("#usage-output").innerHTML.includes("--exclusive"));
+  assert.ok(elements.get("#usage-output").innerHTML.includes("--mem=0"));
+  assert.ok(elements.get("#usage-panel").innerHTML.includes('value="All available"'));
+  await toggleWholeNode();
+  assert.ok(!elements.get("#usage-output").innerHTML.includes("--exclusive"));
+  assert.ok(elements.get("#usage-output").innerHTML.includes("--cpus-per-task=1"));
   vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
   assert.ok(elements.get("#usage-output").innerHTML.includes("ssh dev-amd24-h200"));
   assert.ok(elements.get("#usage-output").innerHTML.includes("does not reserve"));

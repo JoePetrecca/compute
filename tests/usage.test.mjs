@@ -29,3 +29,16 @@ test("invalid requests and shell injection cannot produce runnable templates", (
   assert.ok(buildUsage({ ...profile, id: "h200-8" }, usageDefaults).error);
   assert.ok(buildUsage(profile, usageDefaults, "unknown").error);
 });
+
+test("whole-node requests are exclusive and reserve all available memory in either mode", () => {
+  for (const mode of ["slurm", "interactive"]) {
+    const values = { ...usageDefaults, wholeNode: true };
+    const { code } = buildUsage(profile, values, mode);
+    for (const option of ["--exclusive", "--cpus-per-task=192", "--gpus=h200:4", "--mem=0"]) assert.ok(code.includes(option));
+    assert.ok(!code.includes("--mem=768G"));
+    assert.ok(buildUsage(profile, { ...values, time: "invalid" }, mode).error);
+    assert.equal(values.cpus, "4");
+    assert.equal(values.memory, "32");
+    assert.equal(values.gpus, "1");
+  }
+});

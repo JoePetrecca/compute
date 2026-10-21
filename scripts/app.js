@@ -31,12 +31,16 @@ function setMachineTab(tab) {
 
 function renderUsage() {
   const field = (key, label, attributes) => {
+    const wholeResource = usageValues.wholeNode && ["cpus", "memory", "gpus"].includes(key);
+    const displayValue = wholeResource ? { cpus: state.current.cores, memory: "All available", gpus: state.current.gpuCount }[key] : usageValues[key];
+    if (wholeResource) attributes = key === "memory" ? 'type="text" disabled' : `${attributes} disabled`;
     const numeric = attributes.includes('type="number"');
-    const adjust = (delta, symbol) => `<button type="button" data-adjust="${key}" data-delta="${delta}" aria-label="${delta < 0 ? "Decrease" : "Increase"} ${label}">${symbol}</button>`;
-    return `<div class="resource-field"><label for="resource-${key}">${label}</label><div class="${numeric ? "resource-stepper" : "resource-input"}">${numeric ? adjust(-1, "−") : ""}<input id="resource-${key}" name="${key}" value="${esc(usageValues[key])}" ${attributes}>${numeric ? adjust(1, "+") : ""}</div></div>`;
+    const adjust = (delta, symbol) => `<button type="button" data-adjust="${key}" data-delta="${delta}" aria-label="${delta < 0 ? "Decrease" : "Increase"} ${label}" ${wholeResource ? "disabled" : ""}>${symbol}</button>`;
+    return `<div class="resource-field"><label for="resource-${key}">${label}</label><div class="${numeric ? "resource-stepper" : "resource-input"}">${numeric ? adjust(-1, "−") : ""}<input id="resource-${key}" name="${key}" value="${esc(displayValue)}" ${attributes}>${numeric ? adjust(1, "+") : ""}</div></div>`;
   };
   $("#usage-panel").innerHTML = `<div class="resource-builder"><span class="usage-kicker">YOUR WORKSPACE</span><h2>Configure your resources</h2><p>One Genoa + Hopper compute node · request only what your program can use.</p><form id="resource-form"><div class="resource-fields">${field("cpus", "CPU cores", 'type="number" min="1" max="192" step="1" required')}${field("memory", "System RAM (GiB)", 'type="number" min="1" max="768" step="1" required')}${field("gpus", "H200 GPUs", 'type="number" min="1" max="4" step="1" required')}${field("time", "Wall time (HH:MM:SS)", 'type="text" required')}${field("account", "Account (optional)", 'type="text" placeholder="Your Slurm account"')}</div></form><p class="resource-hint">RAM is CPU memory, not GPU memory. Each whole H200 provides 141 GB of GPU memory; GPU memories do not automatically combine. This template uses one task; your application must support multiple CPU cores or GPUs.</p><div class="usage-modes" role="group" aria-label="How to run"><button type="button" data-usage-mode="slurm" aria-pressed="${usageMode === "slurm"}"><strong>Slurm job</strong><span>Submit a script and let it run</span></button><button type="button" data-usage-mode="interactive" aria-pressed="${usageMode === "interactive"}"><strong>Interactive</strong><span>Open a shell and work live</span></button></div></div><div id="usage-output"></div>`;
   updateUsage();
+  $("#resource-form").insertAdjacentHTML("beforebegin", `<div class="whole-node-control"><button type="button" id="whole-node" aria-pressed="${usageValues.wholeNode}">Whole node <span aria-hidden="true">${usageValues.wholeNode ? "✓" : "+"}</span></button><p>${usageValues.wholeNode ? "Exclusive access · 192 CPU cores · 4 H200 GPUs · all scheduler-available RAM (--mem=0). May increase queue time and resource usage." : "Need the entire machine? Reserve all CPUs, GPUs, and available RAM."}</p></div>`);
 }
 
 function updateUsage() {
@@ -257,8 +261,13 @@ $("#usage-panel").addEventListener("input", (event) => {
   }
 });
 $("#usage-panel").addEventListener("click", async (event) => {
+  if (event.target.closest("#whole-node")) {
+    usageValues.wholeNode = !usageValues.wholeNode;
+    renderUsage();
+    $("#whole-node").focus();
+  }
   const adjust = event.target.closest("[data-adjust]");
-  if (adjust) {
+  if (adjust && !usageValues.wholeNode) {
     const input = $(`#resource-${adjust.dataset.adjust}`);
     const current = Number(input.value);
     input.value = String(Math.min(Number(input.max), Math.max(Number(input.min), (Number.isFinite(current) ? current : Number(input.min)) + Number(adjust.dataset.delta))));

@@ -142,6 +142,13 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .machine-tabs:not([hidden]) + .inspector, .usage-panel { margin-top: 0; border-top-width: 1px; border-top-left-radius: 0; border-top-right-radius: 0; }
 .usage-panel { padding: 30px; background: linear-gradient(180deg, #f9fbff, #f6f8fb); }
 .resource-builder { max-width: 900px; margin: 4px auto 28px; text-align: center; }
+.whole-node-control { margin: 22px auto 0; }
+.whole-node-control button { min-height: 48px; padding: 12px 22px; border: 1px solid #c8d9ee; border-radius: 12px; background: #fff; color: #345e91; font: inherit; font-size: 14px; font-weight: 550; }
+.whole-node-control button span { margin-left: 14px; }
+.whole-node-control button:hover { background: #edf4ff; }
+.whole-node-control button[aria-pressed=true] { background: #e1edfc; border-color: #83a8d6; }
+.usage-panel .whole-node-control p { margin-top: 10px; font-size: 12px; }
+.resource-fields input:disabled { color: #65768b; opacity: 1; cursor: not-allowed; }
 .usage-kicker { display: block; margin-bottom: 8px; color: #7487a1; font-size: 10px; font-weight: 650; letter-spacing: 1.3px; }
 .usage-panel .resource-builder h2 { font-size: 25px; margin-bottom: 8px; }
 .resource-fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 26px 0 18px; text-align: left; }
