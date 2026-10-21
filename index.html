@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,20 +9,32 @@
   <title>Compute Atlas</title>
   <link rel="stylesheet" href="styles/atlas.css">
 </head>
+
 <body>
   <div class="app">
     <aside>
       <header class="sidebar-header">
-        <a class="brand" href="./" aria-label="Compute Atlas home"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="4" stroke="#7b8799" stroke-width="1.4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="#b7cce5"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3" stroke="#7b8799" stroke-width="1.4"/></svg> Compute Atlas</a>
-        <p>Local machines → ICER</p>
-        <label class="search"><input id="search" type="search" placeholder="Find a chip or node…" aria-label="Find a computer" autocomplete="off"></label>
+        <a class="brand" href="./" aria-label="Compute Atlas home"><svg viewBox="0 0 24 24" fill="none"
+            aria-hidden="true">
+            <rect x="5" y="5" width="14" height="14" rx="4" stroke="#7b8799" stroke-width="1.4" />
+            <rect x="9" y="9" width="6" height="6" rx="1.5" fill="#b7cce5" />
+            <path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3" stroke="#7b8799" stroke-width="1.4" />
+          </svg> Compute Atlas</a>
+        <label class="search"><input id="search" type="search" placeholder="Find a chip or node…"
+            aria-label="Find a computer" autocomplete="off"></label>
       </header>
-      <nav id="computer-list" aria-label="Computers"><p class="loading">Loading computers…</p></nav>
+      <nav id="computer-list" aria-label="Computers">
+        <p class="loading">Loading computers…</p>
+      </nav>
       <footer>Five profiles · October 2026</footer>
     </aside>
     <main>
       <header class="page-header">
-        <div><p class="eyebrow" id="computer-group"></p><h1 id="computer-name">Compute Atlas</h1><p class="summary" id="computer-summary"></p></div>
+        <div>
+          <p class="eyebrow" id="computer-group"></p>
+          <h1 id="computer-name">Compute Atlas</h1>
+          <p class="summary" id="computer-summary"></p>
+        </div>
         <button id="details-button" class="secondary info" aria-label="Configuration details and sources">i</button>
       </header>
       <section id="controls" class="controls" hidden aria-label="Local machine options">
@@ -30,14 +43,29 @@
         <label><input id="npu" type="checkbox"> AI accelerator</label>
         <label><input id="discrete-gpu" type="checkbox"> Separate GPU</label>
       </section>
+      <div id="diagram-view-controls" class="diagram-view-controls" hidden>
+        <span>Diagram view</span>
+        <div class="view-switch" role="group" aria-label="Diagram detail level">
+          <button type="button" data-diagram-view="simple" aria-pressed="false">Simple</button>
+          <button type="button" data-diagram-view="detailed" aria-pressed="true">Detailed</button>
+        </div>
+      </div>
       <section id="diagram" class="diagram" aria-label="Hardware architecture diagram"></section>
       <section id="inspector" class="inspector" aria-live="polite">
-        <p class="eyebrow">Select a component</p><h2>Explore the diagram</h2><p>Click a CPU, GPU, memory pool, or connection to see what it represents.</p>
+        <p class="eyebrow">Select a component</p>
+        <h2>Explore the diagram</h2>
+        <p>Click a CPU, GPU, memory pool, or connection to see what it represents.</p>
       </section>
-      <footer class="main-footer"><span><i class="cpu"></i>CPU <i class="gpu"></i>GPU <i class="memory"></i>Memory <i class="accelerator"></i>AI accelerator</span><span>Conceptual layout · not to scale</span></footer>
+      <footer class="main-footer"><span><i class="cpu"></i>CPU <i class="gpu"></i>GPU <i class="memory"></i>Memory <i
+            class="accelerator"></i>AI accelerator</span><span>Conceptual layout · not to scale</span></footer>
     </main>
   </div>
-  <dialog id="details-dialog"><button id="close-dialog" class="close" aria-label="Close">×</button><p class="eyebrow">Configuration details</p><h2 id="dialog-title"></h2><div id="dialog-content"></div></dialog>
+  <dialog id="details-dialog"><button id="close-dialog" class="close" aria-label="Close">×</button>
+    <p class="eyebrow">Configuration details</p>
+    <h2 id="dialog-title"></h2>
+    <div id="dialog-content"></div>
+  </dialog>
   <script type="module" src="scripts/app.js"></script>
 </body>
+
 </html>

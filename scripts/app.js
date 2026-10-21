@@ -1,6 +1,6 @@
 const profileFiles = ["intel", "amd", "moria", "grace-hopper", "acm"];
 const $ = (selector) => document.querySelector(selector);
-const state = { profiles: [], current: null, local: { integrated: true, npu: false, discrete: false } };
+const state = { profiles: [], current: null, diagramView: "detailed", local: { integrated: true, npu: false, discrete: false } };
 
 let componentCopy = {};
 
@@ -62,7 +62,7 @@ function localDiagram(p) {
   return diagram;
 }
 function serverDiagram(p) {
-  if (p.sockets === 2) return dualCpuDiagram(p);
+  if (p.sockets === 2 && state.diagramView === "detailed") return dualCpuDiagram(p);
   if (!p.gpu) return part("cpu", 80, 160, 340, 190, "CPU", `${p.cores} cores`) + wire("M420 255H575", "", 0, 0) + part("memory", 575, 160, 350, 190, p.memory, "System RAM");
   let diagram = part("cpu", 100, 50, 330, 150, "CPU", `${p.cores} cores`) + wire("M430 125H590", "", 0, 0) + part("memory", 590, 50, 300, 150, p.memory, "System RAM") + wire("M265 200V270H500V300", "PCIe", 500, 263);
   diagram += `<rect class="frame" x="55" y="300" width="890" height="240" rx="25"/><text class="wire-label" x="80" y="333">${p.gpuCount} × ${esc(p.gpu)}</text>`;
@@ -96,8 +96,10 @@ function graceDiagram(p) {
 }
 function renderDiagram() {
   const p = state.current;
+  $("#diagram-view-controls").hidden = p.sockets !== 2;
+  document.querySelectorAll("[data-diagram-view]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.diagramView === state.diagramView)));
   const drawing = p.layout === "local" ? localDiagram(p) : p.layout === "grace-hopper" ? graceDiagram(p) : serverDiagram(p);
-  $("#diagram").innerHTML = `<svg viewBox="0 0 1000 ${p.sockets === 2 && !p.gpu ? 430 : 620}" role="img" aria-label="${esc(p.label)} architecture diagram">${drawing}</svg>`;
+  $("#diagram").innerHTML = `<svg viewBox="0 0 1000 ${p.sockets === 2 && state.diagramView === "detailed" && !p.gpu ? 430 : 620}" role="img" aria-label="${esc(p.label)} architecture diagram">${drawing}</svg>`;
 }
 
 function showInspector(kind) {
@@ -134,6 +136,13 @@ function details() {
 }
 
 $("#search").addEventListener("input", renderList);
+$("#diagram-view-controls").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-diagram-view]");
+  if (!button || !["simple", "detailed"].includes(button.dataset.diagramView)) return;
+  state.diagramView = button.dataset.diagramView;
+  renderDiagram();
+  showInspector();
+});
 $("#computer-list").addEventListener("click", (event) => { const button = event.target.closest("[data-id]"); if (button) choose(button.dataset.id); });
 $("#diagram").addEventListener("click", (event) => { const target = event.target.closest("[data-part]"); if (target) showInspector(target.dataset.part); });
 $("#diagram").addEventListener("keydown", (event) => { if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-part]")) { event.preventDefault(); showInspector(event.target.dataset.part); } });
