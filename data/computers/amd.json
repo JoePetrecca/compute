@@ -7,6 +7,7 @@
   "architecture": "x86-64",
   "memory": "System RAM",
   "description": "A configurable local AMD computer for development, data preparation, and smaller jobs.",
+  "tidbit": "AMD is a processor brand, not one fixed configuration. An AMD CPU can be paired with graphics from another vendor; the CPU brand does not determine the separate GPU.",
   "source": { "label": "AMD · Ryzen AI", "url": "https://www.amd.com/en/products/processors/business-systems/ryzen-ai.html" },
   "localOptions": true
 }

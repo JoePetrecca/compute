@@ -14,6 +14,14 @@
   "nodes": ["nch-000", "nch-001", "nch-002"],
   "nodeRange": "nch-[000–002]",
   "description": "Grace CPU and Hopper GPU in one tightly connected superchip, suited to supported GPU work with substantial CPU–GPU interaction.",
+  "tidbit": "The name honors Grace Hopper, a pioneering computer scientist and U.S. Navy rear admiral who helped develop early compilers and influenced COBOL. NVIDIA pairs its Grace CPU with its Hopper-architecture GPU in this superchip.",
+  "components": {
+    "cpu": { "title": "Grace · the CPU half", "text": "The 72-core NVIDIA Grace CPU runs general-purpose code and prepares work for the Hopper GPU. It uses Arm instructions, so software needs an ARM64-compatible build.", "tidbit": "Arm is an instruction-set family, not a guarantee that software built for an Apple Mac will run unchanged on this Linux node." },
+    "gpu": { "title": "Hopper · the GPU half", "text": "The Hopper GPU handles supported parallel computation, including AI and scientific workloads. GH200 is the Grace Hopper superchip pairing—not a second CPU.", "tidbit": "Grace is the CPU name; Hopper is the GPU architecture. Together they make Grace Hopper." },
+    "memory": { "title": "480 GB · Grace CPU memory", "text": "This is the CPU-side memory pool, useful for large host-side datasets and preparation work. It is separate from the GPU’s 96 GB of high-bandwidth memory.", "tidbit": "The coherent connection supports shared access in compatible software, but CPU memory does not become equally fast GPU-local memory." },
+    "vram": { "title": "96 GB · Hopper GPU memory", "text": "The GPU has its own high-bandwidth memory (HBM), designed to feed calculations quickly. Models and their working state benefit from staying close to the GPU.", "tidbit": "HBM stands for high-bandwidth memory. Its capacity and speed are different specifications from the CPU’s 480 GB memory pool." },
+    "interconnect": { "title": "NVLink-C2C · chip-to-chip connection", "text": "A fast, coherent link between the Grace CPU and Hopper GPU. It lets supported software exchange and access data across the two processors more directly.", "tidbit": "C2C means chip-to-chip. This is different from GPU-to-GPU NVLink, and it does not erase the speed differences between CPU and GPU memory." }
+  },
   "note": "Buy-in rules apply; non-owner jobs are limited to under four hours.",
   "source": { "label": "ICER · Grace Hopper", "url": "https://docs.icer.msu.edu/Getting_Started_with_Grace_Hopper_and_Grace_Grace/" }
 }

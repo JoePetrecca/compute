@@ -17,6 +17,7 @@ The browser loads individual computer profiles from `data/computers/`, so openin
 ## Project structure
 
 - `data/computers/` — one JSON file per computer profile
+- `data/components.json` — shared plain-language component explanations; profiles can override these with machine-specific `components` and add an introductory `tidbit`
 - `scripts/app.js` — shared interface, interaction, and diagram rendering
 - `styles/atlas.css` — shared visual design
 - `Compute-Atlas.html` — the original full atlas, kept as an archive/reference

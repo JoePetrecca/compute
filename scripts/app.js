@@ -2,20 +2,15 @@ const profileFiles = ["intel", "amd", "moria", "grace-hopper", "acm"];
 const $ = (selector) => document.querySelector(selector);
 const state = { profiles: [], current: null, local: { integrated: true, npu: false, discrete: false } };
 
-const componentCopy = {
-  cpu: ["CPU", "Runs code, prepares data, and handles general computation. More cores help work that can run in parallel; they do not speed up every task automatically."],
-  gpu: ["GPU", "Runs supported parallel workloads such as training, inference, simulation, and rendering. The application needs a compatible GPU software path."],
-  memory: ["System memory", "Holds the data and working state used by the CPU. Capacity determines how much can fit at once; capacity alone does not determine speed."],
-  vram: ["GPU memory", "Holds models and data used by the GPU. It is a separate physical pool from ordinary system memory on these systems."],
-  npu: ["AI accelerator", "Efficiently runs supported neural-network inference. It is not a general replacement for a GPU or automatic acceleration for arbitrary code."],
-  interconnect: ["Processor connection", "This is the path data follows between processors. The link improves supported communication, but does not make every memory pool equally fast."],
-  discrete: ["Separate GPU", "An additional processor with its own GPU memory for compatible parallel workloads."]
-};
+let componentCopy = {};
 
 function esc(value) { return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function subline(p) { return p.gpu ? `${p.cores ? `${p.cores} cores · ` : ""}${p.gpuCount}× ${p.gpu}` : p.cores ? `${p.cores} cores · ${p.memory}` : "Configurable local machine"; }
 
 async function loadProfiles() {
+  const copyResponse = await fetch("data/components.json");
+  if (!copyResponse.ok) throw new Error("Could not load component explanations");
+  componentCopy = await copyResponse.json();
   const profiles = await Promise.all(profileFiles.map(async (file) => {
     const response = await fetch(`data/computers/${file}.json`);
     if (!response.ok) throw new Error(`Could not load ${file}`);
@@ -52,7 +47,7 @@ function part(kind, x, y, width, height, title, subtitle, extra = "") {
   const top = y + (height - 105) / 2;
   return `<g class="part" data-part="${kind}" tabindex="0" role="button" aria-label="${esc(title)}"><rect class="${type}-box" x="${x}" y="${y}" width="${width}" height="${height}" rx="18"/>${extra}<image class="component-icon" href="assets/icons/${icon}.svg" x="${x + width / 2 - 36}" y="${top}" width="72" height="48" aria-hidden="true"/><text class="label" x="${x + width / 2}" y="${top + 75}" text-anchor="middle">${esc(title)}</text><text class="sub" x="${x + width / 2}" y="${top + 101}" text-anchor="middle">${esc(subtitle)}</text></g>`;
 }
-function wire(path, label, x, y) { return `<path class="wire" d="${path}"/>${label ? `<g class="part" data-part="interconnect" tabindex="0" role="button"><rect x="${x - 75}" y="${y - 18}" width="150" height="28" fill="transparent"/><text class="wire-label" x="${x}" y="${y}" text-anchor="middle">${esc(label)}</text></g>` : ""}`; }
+function wire(path, label, x, y) { return `<path class="wire" d="${path}"/>${label ? `<g class="part" data-part="interconnect" tabindex="0" role="button" aria-label="Explain ${esc(label)}"><rect x="${x - 75}" y="${y - 18}" width="150" height="28" fill="transparent"/><text class="wire-label" x="${x}" y="${y}" text-anchor="middle">${esc(label)} ⓘ</text></g>` : ""}`; }
 
 function localDiagram(p) {
   const blocks = [["cpu", "CPU", p.cpu]];
@@ -83,9 +78,10 @@ function renderDiagram() {
 }
 
 function showInspector(kind) {
-  if (!kind) { $("#inspector").innerHTML = '<p class="eyebrow">Select a component</p><h2>Explore the diagram</h2><p>Click a CPU, GPU, memory pool, or connection to see what it represents.</p>'; return; }
-  const [title, text] = componentCopy[kind] || componentCopy.cpu;
-  $("#inspector").innerHTML = `<p class="eyebrow">Component guide</p><h2>${esc(title)}</h2><p>${esc(text)}</p>`;
+  const p = state.current;
+  const copy = kind ? p.components?.[kind] || componentCopy[kind] : { title: "A little context", text: p.tidbit };
+  if (!copy) return;
+  $("#inspector").innerHTML = `<div class="inspector-summary"><h2>${esc(copy.title)}</h2><p>${esc(copy.text)}</p></div>${copy.tidbit ? `<details class="inspector-tidbit"><summary>A little more</summary><p>${esc(copy.tidbit)}</p></details>` : ""}${!kind ? '<p class="inspector-hint">Select a component or a connection label to learn more.</p>' : ""}`;
 }
 function details() {
   const p = state.current;

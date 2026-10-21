@@ -1,0 +1,37 @@
+{
+  "cpu": {
+    "title": "CPU · central processing unit",
+    "text": "The general-purpose processor: it runs your program, prepares data, and coordinates the rest of the computer. Multiple cores can work on separate tasks at the same time.",
+    "tidbit": "More cores help parallel work, but a task that must happen one step at a time may still depend on the speed of a single core."
+  },
+  "gpu": {
+    "title": "GPU · graphics processing unit",
+    "text": "Originally built for graphics, GPUs are also good at doing many similar calculations at once—useful for neural networks, image processing, and some simulations.",
+    "tidbit": "Software has to support the GPU. Simply having one does not make every program faster. An integrated GPU usually shares system RAM rather than having its own separate memory."
+  },
+  "memory": {
+    "title": "RAM · random-access memory",
+    "text": "The computer’s temporary workspace for running programs and their data. More RAM lets larger datasets fit in memory, but it is not the same thing as disk storage.",
+    "tidbit": "Capacity tells you how much fits; bandwidth tells you how quickly data can move. RAM normally loses its contents when the computer powers off."
+  },
+  "vram": {
+    "title": "VRAM · GPU memory",
+    "text": "The GPU’s own workspace for model weights, images, intermediate results, and other data. A workload must fit here or deliberately move or split its data.",
+    "tidbit": "Training needs room for more than model weights: gradients, optimizer state, and intermediate activations also use memory."
+  },
+  "npu": {
+    "title": "NPU · neural processing unit",
+    "text": "A specialized processor for supported AI tasks, often designed for efficient on-device inference—running an already-trained model.",
+    "tidbit": "An NPU is not a small general-purpose GPU. The model, operators, and software runtime must support it."
+  },
+  "discrete": {
+    "title": "Discrete · a separate graphics processor",
+    "text": "A GPU separate from the CPU, typically on its own graphics card with its own memory. It handles supported graphics and parallel computation.",
+    "tidbit": "“Discrete” means separate. It does not specify a brand, memory capacity, or software compatibility."
+  },
+  "interconnect": {
+    "title": "PCIe · Peripheral Component Interconnect Express",
+    "text": "A high-speed connection used to move data between the computer and devices such as graphics cards and SSDs. Think of it as a road between components, not another processor.",
+    "tidbit": "PCIe connections have generations and lane counts (such as x16). Both affect available bandwidth; transferring data can still take time even with a fast GPU."
+  }
+}

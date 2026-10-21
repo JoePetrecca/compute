@@ -10,5 +10,10 @@
   "nodeRange": "acm-[000–047]",
   "nodes": ["acm-000 through acm-047"],
   "description": "CPU-focused ICER nodes for parallel simulations, data preparation, numerical libraries, and independent batch jobs.",
+  "tidbit": "This profile describes one node in acm-000–047, not the combined cluster. A scheduler allocation may give your job only part of that node’s cores and memory.",
+  "components": {
+    "cpu": { "title": "EPYC 7763 · CPU-focused computing", "text": "Each node provides 128 physical CPU cores across its processors. These can run parallel numerical work or many independent tasks; no compute GPU is shown in this configuration.", "tidbit": "Parallel code or multiple jobs can use many cores. A single-threaded program does not automatically spread itself over all 128." },
+    "memory": { "title": "493 GB · memory available to jobs", "text": "ICER’s published table lists this memory capacity per node. Your job’s actual memory limit depends on the resources requested and allocated by the scheduler.", "tidbit": "Memory on different cluster nodes is not one automatic shared pool. Multi-node applications need explicit distributed communication." }
+  },
   "source": { "label": "ICER · Cluster resources", "url": "https://docs.icer.msu.edu/Cluster_Resources/" }
 }

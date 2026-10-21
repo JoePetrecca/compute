@@ -7,6 +7,7 @@
   "architecture": "x86-64",
   "memory": "System RAM",
   "description": "A configurable local Intel computer for development, data preparation, and smaller jobs.",
+  "tidbit": "Intel is a processor brand, not one fixed configuration. The toggles illustrate possible components; the exact chip determines which are actually present.",
   "source": { "label": "Intel · Integrated and discrete graphics", "url": "https://www.intel.com/content/www/us/en/support/articles/000057824/graphics.html" },
   "localOptions": true
 }
