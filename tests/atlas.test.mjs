@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
-import { prepareProfiles, expandNodes } from "../scripts/profiles.js";
+import { prepareProfiles, expandNodes, sidebarSubtitle } from "../scripts/profiles.js";
 
 const root = new URL("../", import.meta.url);
 const json = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
@@ -42,10 +42,26 @@ test("physical core and slice capacities are distinct from allocatable resources
   assert.equal(profiles.find((p) => p.id === "grace-grace").cpuLink, "NVLink-C2C");
 });
 
+test("sidebar subtitles describe workloads or specifications without renaming machines", () => {
+  for (const profile of profiles) {
+    for (const mode of ["workload", "specs"]) {
+      const subtitle = sidebarSubtitle(profile, mode);
+      assert.ok(subtitle && !subtitle.includes("undefined"), `${profile.id}/${mode}`);
+    }
+  }
+  const milan = profiles.find((p) => p.id === "acm");
+  assert.equal(sidebarSubtitle(milan, "workload"), "Parallel CPU workloads");
+  assert.equal(sidebarSubtitle(milan, "specs"), "EPYC 7763 · 128 cores");
+  assert.equal(milan.label, "Milan · 493 GB");
+});
+
 test("every view and clickable component renders usable information", async () => {
   const elements = new Map();
+  const storage = new Map([["compute-sidebar-mode", "specs"]]);
   const context = vm.createContext({
     prepareProfiles,
+    sidebarSubtitle,
+    localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
     document: {
       querySelector(key) {
         if (!elements.has(key)) elements.set(key, { value: "", addEventListener() {}, showModal() {}, close() {} });
@@ -59,6 +75,16 @@ test("every view and clickable component renders usable information", async () =
   app = app.replace(/^import .*\n/, "").replace("loadProfiles().catch", "globalThis.ready = loadProfiles().catch");
   vm.runInContext(app, context);
   await context.ready;
+  assert.equal(vm.runInContext("state.sidebarMode", context), "specs");
+  vm.runInContext("choose('acm'); showInspector('cpu');", context);
+  const before = [elements.get("#diagram").innerHTML, elements.get("#inspector").innerHTML];
+  vm.runInContext("setSidebarMode('workload')", context);
+  assert.equal(storage.get("compute-sidebar-mode"), "workload");
+  assert.equal(vm.runInContext("state.current.id", context), "acm");
+  assert.deepEqual([elements.get("#diagram").innerHTML, elements.get("#inspector").innerHTML], before);
+  assert.ok(elements.get("#computer-list").innerHTML.includes("Parallel CPU workloads"));
+  vm.runInContext("setSidebarMode('specs')", context);
+  assert.ok(elements.get("#computer-list").innerHTML.includes("EPYC 7763 · 128 cores"));
   for (const profile of profiles) {
     for (const view of ["simple", "detailed"]) {
       vm.runInContext(`state.diagramView = '${view}'; choose('${profile.id}'); details();`, context);
@@ -80,4 +106,7 @@ test("every view and clickable component renders usable information", async () =
   elements.get("#search").value = "agg-073";
   vm.runInContext("renderList()", context);
   assert.ok(elements.get("#computer-list").innerHTML.includes('data-id="genoa-2300"'));
+  elements.get("#search").value = "cache-sensitive";
+  vm.runInContext("renderList()", context);
+  assert.ok(elements.get("#computer-list").innerHTML.includes('data-id="genoa-x"'));
 });

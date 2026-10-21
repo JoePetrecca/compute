@@ -4,6 +4,8 @@ An interactive visual reference for local hardware, lab machines, and ICER clust
 
 Visit the published site at [JoePetrecca.github.io/compute](https://JoePetrecca.github.io/compute/).
 
+The sidebar’s **Workload / Specs** switch changes subtitles without renaming machines. The preference is saved in the browser when storage is available; search matches either subtitle style. A profile can provide an optional `workloadLabel` to override its default workload subtitle.
+
 ## Run locally
 
 Serve the project directory with a local web server, then open the reported address in a modern browser:

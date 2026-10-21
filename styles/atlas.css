@@ -70,6 +70,9 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .view-switch { display: flex; gap: 3px; padding: 3px; border: 1px solid #e2e5eb; border-radius: 9px; background: #f1f3f6; }
 .view-switch button { border: 0; border-radius: 6px; padding: 5px 13px; background: transparent; color: #85858f; font-size: 11px; }
 .view-switch button[aria-pressed=true] { background: #fff; color: #0868cc; box-shadow: 0 1px 4px #0001; }
+.sidebar-mode { margin-top: 10px; background: #e6e6e9; border: 0; }
+.sidebar-mode button { flex: 1; }
+.computer > span:last-child { min-width: 0; }
 .diagram { width: 100%; margin: 14px auto; max-width: 1100px; }
 .diagram svg { display: block; width: 100%; height: auto; overflow: hidden; }
 .part { cursor: pointer; outline: none; }
@@ -153,7 +156,8 @@ dialog h2 { font-size: 27px; font-weight: 550; letter-spacing: -.7px; margin: 0 
   nav section { display: flex; flex-shrink: 0; margin: 0; }
   .group-title { display: none; }
   .computer { width: auto; white-space: nowrap; padding: 8px; }
-  .computer small, aside footer { display: none; }
+  aside footer { display: none; }
+  .computer small { display: block; white-space: normal; max-width: 190px; }
   main { padding: 20px 16px 16px; min-height: 0; }
   .page-header { gap: 10px; }
   .page-header h1 { font-size: 27px; }

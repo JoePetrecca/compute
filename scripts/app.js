@@ -1,12 +1,22 @@
-import { prepareProfiles } from "./profiles.js";
+import { prepareProfiles, sidebarSubtitle } from "./profiles.js";
 const $ = (selector) => document.querySelector(selector);
-const state = { profiles: [], current: null, diagramView: "detailed", local: { integrated: true, npu: false, discrete: false } };
+const state = { profiles: [], current: null, sidebarMode: readSidebarMode(), diagramView: "detailed", local: { integrated: true, npu: false, discrete: false } };
 
 let componentCopy = {};
 let hardware = {};
 
 function esc(value) { return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
-function subline(p) { return p.gpu ? `${p.cores ? `${p.cores} cores · ` : ""}${p.gpuCount}× ${p.gpu}` : p.cores ? `${p.cores} cores · ${p.memory}` : "Configurable local machine"; }
+function readSidebarMode() {
+  try { return localStorage.getItem("compute-sidebar-mode") === "specs" ? "specs" : "workload"; }
+  catch { return "workload"; }
+}
+function setSidebarMode(mode) {
+  if (!["workload", "specs"].includes(mode)) return;
+  state.sidebarMode = mode;
+  try { localStorage.setItem("compute-sidebar-mode", mode); } catch { /* Storage may be unavailable. */ }
+  renderList();
+}
+function subline(p) { return sidebarSubtitle(p, state.sidebarMode); }
 
 async function loadProfiles() {
   const loadJson = async (path) => {
@@ -29,8 +39,9 @@ async function loadProfiles() {
 }
 
 function renderList() {
+  document.querySelectorAll("[data-sidebar-mode]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.sidebarMode === state.sidebarMode)));
   const query = $("#search").value.trim().toLowerCase();
-  const visible = state.profiles.filter((p) => [p.label, p.group, p.cpu, p.gpu, p.memory, p.cluster, p.nodeRange, ...p.nodes].filter(Boolean).join(" ").toLowerCase().includes(query));
+  const visible = state.profiles.filter((p) => [p.label, p.group, p.cpu, p.gpu, p.memory, p.cluster, p.nodeRange, sidebarSubtitle(p, "workload"), sidebarSubtitle(p, "specs"), ...p.nodes].filter(Boolean).join(" ").toLowerCase().includes(query));
   const groups = [...new Set(visible.map((p) => p.group))];
   $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section><h2 class="group-title">${esc(group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${p.id === state.current?.id}"><span class="profile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3"/></svg></span><span><strong>${esc(p.label)}</strong><small>${esc(subline(p))}</small></span></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
 }
@@ -153,6 +164,10 @@ function details() {
 }
 
 $("#search").addEventListener("input", renderList);
+$("#sidebar-mode-controls").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-sidebar-mode]");
+  if (button) setSidebarMode(button.dataset.sidebarMode);
+});
 $("#diagram-view-controls").addEventListener("click", (event) => {
   const button = event.target.closest("[data-diagram-view]");
   if (!button || !["simple", "detailed"].includes(button.dataset.diagramView)) return;

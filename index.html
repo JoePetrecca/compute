@@ -22,6 +22,10 @@
           </svg> Compute Atlas</a>
         <label class="search"><input id="search" type="search" placeholder="Find a chip or node…"
             aria-label="Find a computer" autocomplete="off"></label>
+        <div id="sidebar-mode-controls" class="view-switch sidebar-mode" role="group" aria-label="Sidebar subtitle style">
+          <button type="button" data-sidebar-mode="workload" aria-pressed="true">Workload</button>
+          <button type="button" data-sidebar-mode="specs" aria-pressed="false">Specs</button>
+        </div>
       </header>
       <nav id="computer-list" aria-label="Computers">
         <p class="loading">Loading computers…</p>

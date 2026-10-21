@@ -7,6 +7,33 @@ export function expandNodes(range = "") {
   });
 }
 
+export function sidebarSubtitle(p, mode) {
+  if (mode === "specs") {
+    if (p.id === "moria") return "96 CPU cores · 2 × RTX A4000";
+    if (p.mig) return `${p.sliceMemory}/slice · ${p.gpuCount} physical A100s`;
+    if (p.gpu) return `${p.vram}/GPU · ${p.memory} RAM`;
+    if (p.cores) return `${p.cpu.replace(/^(AMD|Intel) /, "")} · ${p.cores} cores`;
+    return `${p.architecture} · model-dependent hardware`;
+  }
+  if (p.workloadLabel) return p.workloadLabel;
+  if (p.sourceKey === "development") return "Compile, debug & short tests";
+  if (p.id === "moria") return "CUDA development & CPU analysis";
+  if (p.localOptions) return "Local coding & small experiments";
+  if (p.layout === "grace-hopper") return "Closely coupled CPU–GPU work";
+  if (p.layout === "grace-grace") return "Parallel Arm CPU workloads";
+  if (p.mig) return "Small GPU experiments & inference";
+  if (p.id === "data-cpu") return "Large-memory analysis & local I/O";
+  if (p.id === "data-gpu") return "GPU analysis & data-heavy workflows";
+  if (p.gpu === "H200") return "Large-model AI & scientific compute";
+  if (p.gpu === "L40S") return "AI inference, training & rendering";
+  if (p.gpu === "A100") return "AI training & scientific compute";
+  if (p.gpu) return "CUDA workloads & scientific compute";
+  if (p.cpu.includes("9684X")) return "Cache-sensitive simulations";
+  if (p.cpu.includes("E7-8867")) return "Large-memory CPU analysis";
+  if (p.memory.includes("TB") || p.memory === "2005 GB") return "Large-memory parallel CPU work";
+  return "Parallel CPU workloads";
+}
+
 export function prepareProfiles(rawProfiles, hardware) {
   return rawProfiles.map((raw) => {
     const parent = raw.inherit ? rawProfiles.find((profile) => profile.id === raw.inherit) : {};
