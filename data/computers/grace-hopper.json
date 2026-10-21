@@ -6,6 +6,7 @@
   "cpu": "NVIDIA Grace",
   "architecture": "ARM64",
   "cores": 72,
+  "cpuSpecs": { "type": "NVIDIA Grace · Arm Neoverse V2", "cores": "72", "threads": "72 · one thread per core, no SMT", "cache": "1 MB L2 per core · 117 MB L3 per CPU", "cacheSource": "https://developer.nvidia.com/blog/nvidia-grace-cpu-superchip-architecture-in-depth/" },
   "memory": "480 GB",
   "gpu": "GH200",
   "gpuCount": 1,
@@ -18,7 +19,7 @@
   "goodFor": "Supported CUDA AI and scientific computation, especially workloads that exchange substantial data between CPU and GPU or use a large host-side working set. The coherent NVLink-C2C connection is its distinguishing feature.",
   "limitations": "Not an x86 drop-in replacement: binaries and dependencies need ARM64 support. The 480 GB of CPU memory is not an extra 480 GB of equally fast GPU HBM. There is one GPU per node; software and access restrictions still apply.",
   "components": {
-    "cpu": { "title": "Grace · the CPU half", "text": "The 72-core NVIDIA Grace CPU runs general-purpose code and prepares work for the Hopper GPU. It uses Arm instructions, so software needs an ARM64-compatible build.", "tidbit": "Arm is an instruction-set family, not a guarantee that software built for an Apple Mac will run unchanged on this Linux node." },
+    "cpu": { "title": "Grace CPU", "goodFor": "Parallel Arm-compatible CPU work, data preparation, and closely coupled CPU–GPU workloads.", "limitations": "Running x86-only binaries unchanged. Requires ARM64-compatible dependencies; serial code will not use all 72 cores." },
     "gpu": { "title": "Hopper · the GPU half", "text": "The Hopper GPU handles supported parallel computation, including AI and scientific workloads. GH200 is the Grace Hopper superchip pairing—not a second CPU.", "tidbit": "Grace is the CPU name; Hopper is the GPU architecture. Together they make Grace Hopper." },
     "memory": { "title": "480 GB · Grace CPU memory", "text": "This is the CPU-side memory pool, useful for large host-side datasets and preparation work. It is separate from the GPU’s 96 GB of high-bandwidth memory.", "tidbit": "The coherent connection supports shared access in compatible software, but CPU memory does not become equally fast GPU-local memory." },
     "vram": { "title": "96 GB · Hopper GPU memory", "text": "The GPU has its own high-bandwidth memory (HBM), designed to feed calculations quickly. Models and their working state benefit from staying close to the GPU.", "tidbit": "HBM stands for high-bandwidth memory. Its capacity and speed are different specifications from the CPU’s 480 GB memory pool." },

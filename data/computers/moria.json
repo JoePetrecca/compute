@@ -7,6 +7,7 @@
   "architecture": "x86-64",
   "cores": 96,
   "threads": 192,
+  "cpuSpecs": { "type": "2 × AMD EPYC 7552 · Zen 2", "cores": "96 total · 48 per CPU", "threads": "192 total · SMT enabled", "cache": "192 MB L3 per CPU · 384 MB total", "cacheSource": "https://www.amd.com/en/support/downloads/drivers.html/processors/epyc/epyc-7002-series/amd-epyc-7552.html" },
   "memory": "1 TiB",
   "gpu": "RTX A4000",
   "gpuCount": 2,
@@ -18,8 +19,16 @@
   "goodFor": "CUDA development, independent GPU experiments that fit in 16 GB per card, and CPU analysis or preprocessing that benefits from 1 TiB of RAM.",
   "limitations": "Not a substitute for a large-memory scientific GPU: each RTX A4000 has 16 GB, weak double-precision throughput relative to compute-focused GPUs, and no NVLink. Communication-heavy multi-GPU training can be limited by PCIe.",
   "components": {
-    "gpu": { "title": "RTX A4000 · two separate GPUs", "text": "Each card has 16 GB of its own memory and can run compatible CUDA workloads. The two cards can run independent jobs or cooperate when software explicitly supports multiple GPUs.", "tidbit": "Two 16 GB cards do not automatically act like one 32 GB card. These GPUs communicate through PCIe rather than NVLink." },
-    "memory": { "title": "1 TiB · system RAM", "text": "Moria has a large CPU-side workspace for datasets, preprocessing, and memory-intensive analysis. This RAM is separate from each graphics card’s 16 GB.", "tidbit": "TiB means tebibyte: 1 TiB is 1,024 GiB. Binary units such as GiB and TiB differ from decimal GB and TB." }
-  },
-  "source": { "label": "Moria hardware · supplied by Joe", "url": null }
+    "cpu": { "title": "AMD EPYC 7552", "goodFor": "Parallel CPU analysis, preprocessing large datasets, and running many independent tasks.", "limitations": "AVX-512-only code and workloads that depend on strong single-core performance. Hardware threads share core resources; 192 threads are not 192 physical cores." },
+    "gpu": {
+      "title": "RTX A4000 · two separate GPUs",
+      "text": "Each card has 16 GB of its own memory and can run compatible CUDA workloads. The two cards can run independent jobs or cooperate when software explicitly supports multiple GPUs.",
+      "tidbit": "Two 16 GB cards do not automatically act like one 32 GB card. These GPUs communicate through PCIe rather than NVLink."
+    },
+    "memory": {
+      "title": "1 TiB · system RAM",
+      "text": "Moria has a large CPU-side workspace for datasets, preprocessing, and memory-intensive analysis. This RAM is separate from each graphics card’s 16 GB.",
+      "tidbit": "TiB means tebibyte: 1 TiB is 1,024 GiB. Binary units such as GiB and TiB differ from decimal GB and TB."
+    }
+  }
 }
