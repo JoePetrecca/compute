@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 import { prepareProfiles, expandNodes, sidebarSubtitle } from "../scripts/profiles.js";
-import { buildUsage, usageDefaults } from "../scripts/usage.js";
+import { buildUsage, usageDefaults, usageConfig, usageValuesFor } from "../scripts/usage.js";
 
 const root = new URL("../", import.meta.url);
 const json = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
@@ -109,6 +109,8 @@ test("every view and clickable component renders usable information", async () =
   const context = vm.createContext({
     buildUsage,
     usageDefaults,
+    usageConfig,
+    usageValuesFor,
     prepareProfiles,
     sidebarSubtitle,
     localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
@@ -173,12 +175,22 @@ test("every view and clickable component renders usable information", async () =
   await toggleWholeNode();
   assert.ok(!elements.get("#usage-output").innerHTML.includes("--exclusive"));
   assert.ok(elements.get("#usage-output").innerHTML.includes("--cpus-per-task=1"));
+  elements.get("#usage-panel").listeners.input({ target: { name: "targetNode", value: "nfh-005" } });
+  assert.ok(elements.get("#usage-output").innerHTML.includes("--nodelist=nfh-005"));
   vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
   assert.ok(elements.get("#usage-output").innerHTML.includes("ssh dev-amd24-h200"));
   assert.ok(elements.get("#usage-output").innerHTML.includes("does not reserve"));
   vm.runInContext("showInspector('gpu');", context);
   assert.equal(elements.get("#usage-panel").hidden, true);
   vm.runInContext("choose('h200-8');", context);
+  assert.equal(elements.get("#machine-tabs").hidden, false);
+  vm.runInContext("setMachineTab('usage');", context);
+  assert.ok(elements.get("#usage-panel").innerHTML.includes('max="8"'));
+  assert.ok(elements.get("#usage-output").innerHTML.includes("--constraint=neh"));
+  vm.runInContext("choose('h200-4'); setMachineTab('usage');", context);
+  assert.ok(elements.get("#usage-panel").innerHTML.includes('value="nfh-005" selected'));
+  elements.get("#usage-panel").listeners.input({ target: { name: "targetNode", value: "nfh-000" } });
+  vm.runInContext("choose('moria');", context);
   assert.equal(elements.get("#machine-tabs").hidden, true);
   vm.runInContext("choose('acm'); showInspector('cpu');", context);
   const before = [elements.get("#diagram").innerHTML, elements.get("#inspector").innerHTML];
@@ -190,6 +202,23 @@ test("every view and clickable component renders usable information", async () =
   vm.runInContext("setSidebarMode('specs')", context);
   assert.ok(elements.get("#computer-list").innerHTML.includes("EPYC 7763 · 128 cores"));
   for (const profile of profiles) {
+    vm.runInContext(`choose('${profile.id}'); setMachineTab('usage');`, context);
+    assert.equal(elements.get("#usage-panel").hidden, profile.id === "moria");
+    if (profile.id !== "moria") {
+      const config = usageConfig(profile, profiles);
+      assert.ok(elements.get("#usage-output").innerHTML.includes(`--nodelist=${config.nodes[0]}`), profile.id);
+      assert.ok(!elements.get("#usage-output").innerHTML.includes("undefined"), profile.id);
+      assert.equal(elements.get("#usage-panel").innerHTML.includes('name="gpus"'), Boolean(config.maxGpus), profile.id);
+      if (profile.mig) assert.ok(!elements.get("#usage-panel").innerHTML.includes('id="whole-node"'));
+      if (profile.sourceKey === "development") {
+        assert.ok(elements.get("#usage-output").innerHTML.includes(`ssh ${profile.id}`));
+        assert.ok(elements.get("#usage-panel").innerHTML.includes("apply only to a scheduled job"));
+      }
+      vm.runInContext("usageMode = 'interactive'; updateUsage();", context);
+      assert.ok(elements.get("#usage-output").innerHTML.includes("--pty /bin/bash"));
+      vm.runInContext("usageMode = 'slurm'; updateUsage();", context);
+      assert.ok(elements.get("#usage-output").innerHTML.includes("#SBATCH"));
+    }
     for (const view of ["simple", "detailed"]) {
       vm.runInContext(`state.diagramView = '${view}'; choose('${profile.id}'); details();`, context);
       const svg = elements.get("#diagram").innerHTML;

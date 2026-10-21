@@ -1,44 +1,111 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildUsage, usageDefaults } from "../scripts/usage.js";
+import { readFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { prepareProfiles } from "../scripts/profiles.js";
+import { buildUsage, usageDefaults, usageConfig, usageValuesFor } from "../scripts/usage.js";
 
-const profile = { id: "h200-4", cores: 192, gpuCount: 4 };
+const json = async path => JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), "utf8"));
+const ids = await json("data/computers.json");
+const profiles = prepareProfiles(await Promise.all(ids.map(id => json(`data/computers/${id}.json`))), await json("data/hardware.json"));
+const profile = profiles.find(p => p.id === "h200-4");
 
-test("batch template targets one nfh node with typed GPUs and total system memory", () => {
+test("every ICER configuration generates valid single-node batch and interactive templates", () => {
+  assert.equal(profiles.filter(p => usageConfig(p, profiles)).length, 36);
+  for (const p of profiles) {
+    if (p.id === "moria") {
+      assert.equal(usageConfig(p, profiles), null);
+      assert.ok(buildUsage(p, usageDefaults).error);
+      continue;
+    }
+    const config = usageConfig(p, profiles);
+    const values = usageValuesFor(p, profiles);
+    for (const mode of ["slurm", "interactive"]) {
+      const { code, error } = buildUsage(p, values, mode, profiles);
+      assert.equal(error, undefined, p.id);
+      assert.ok(code.includes("--nodes=1"));
+      assert.ok(code.includes(`--nodelist=${config.nodes[0]}`));
+      assert.ok(!code.includes("undefined") && !code.includes("NaN"));
+      assert.equal(code.includes("--gpus="), Boolean(config.maxGpus), p.id);
+      assert.ok(!code.includes("--nodelist=dev-"));
+      execFileSync("bash", ["-n"], { input: code });
+      const node = config.nodes.at(-1);
+      assert.ok(buildUsage(p, { ...values, targetNode: node }, mode, profiles).code.includes(`--nodelist=${node}`));
+    }
+  }
+});
+
+test("Hopper templates preserve typed GPUs, system memory and CPU count on job steps", () => {
   const { code, error } = buildUsage(profile, usageDefaults);
   assert.equal(error, undefined);
   for (const option of ["--nodes=1", "--ntasks=1", "--cpus-per-task=4", "--mem=32G", "--gpus=h200:1", "--constraint=nfh", "--time=01:00:00"]) assert.ok(code.includes(`#SBATCH ${option}`));
-  assert.ok(code.includes("srun python your_program.py"));
+  assert.ok(code.includes("srun --cpus-per-task=4 python your_program.py"));
   assert.ok(!code.includes("--mem-per-gpu"));
   assert.ok(!code.includes("--account="));
-});
-
-test("interactive command uses edited resources and an optional safe account", () => {
-  const { code } = buildUsage(profile, { ...usageDefaults, cpus: "8", memory: "64", gpus: "2", time: "02:30:00", account: "lab-account" }, "interactive");
-  assert.ok(code.startsWith("srun "));
-  for (const option of ["--cpus-per-task=8", "--mem=64G", "--gpus=h200:2", "--time=02:30:00", "--account=lab-account", "--pty /bin/bash"]) assert.ok(code.includes(option));
-  assert.ok(!code.includes("#SBATCH"));
+  const interactive = buildUsage(profile, { ...usageDefaults, cpus: "8", memory: "64", gpus: "2", time: "02:30:00", account: "lab-account" }, "interactive").code;
+  for (const option of ["--cpus-per-task=8", "--mem=64G", "--gpus=h200:2", "--time=02:30:00", "--account=lab-account", "--pty /bin/bash"]) assert.ok(interactive.includes(option));
 });
 
 test("invalid requests and shell injection cannot produce runnable templates", () => {
-  for (const [key, value] of [["cpus", "0"], ["cpus", "193"], ["cpus", "1.5"], ["cpus", "4;id"], ["memory", ""], ["memory", "769"], ["gpus", "0"], ["gpus", "5"], ["time", "00:00:00"], ["time", "01:60:00"], ["time", "01:00:00\nwhoami"], ["account", "lab;id"], ["account", "lab\n#SBATCH --exclusive"]]) {
+  for (const [key, value] of [["cpus", "0"], ["cpus", "193"], ["cpus", "1.5"], ["cpus", "4;id"], ["memory", ""], ["memory", "769"], ["gpus", "0"], ["gpus", "5"], ["time", "00:00:00"], ["time", "01:60:00"], ["time", "01:00:00\nwhoami"], ["account", "lab;id"], ["account", "lab\n#SBATCH --exclusive"], ["targetNode", "nfh-000;id"], ["targetNode", "nfh-[000-005]"], ["targetNode", "neh-000"]]) {
     const result = buildUsage(profile, { ...usageDefaults, [key]: value });
     assert.ok(result.error, `${key}: ${value}`);
     assert.equal(result.code, undefined);
   }
-  assert.ok(buildUsage({ ...profile, id: "h200-8" }, usageDefaults).error);
   assert.ok(buildUsage(profile, usageDefaults, "unknown").error);
 });
 
-test("whole-node requests are exclusive and reserve all available memory in either mode", () => {
-  for (const mode of ["slurm", "interactive"]) {
-    const values = { ...usageDefaults, wholeNode: true };
-    const { code } = buildUsage(profile, values, mode);
-    for (const option of ["--exclusive", "--cpus-per-task=192", "--gpus=h200:4", "--mem=0"]) assert.ok(code.includes(option));
-    assert.ok(!code.includes("--mem=768G"));
-    assert.ok(buildUsage(profile, { ...values, time: "invalid" }, mode).error);
-    assert.equal(values.cpus, "4");
-    assert.equal(values.memory, "32");
-    assert.equal(values.gpus, "1");
+test("whole-node requests are exclusive except for MIG and preserve custom settings", () => {
+  for (const p of profiles.filter(p => p.group.startsWith("ICER"))) {
+    const config = usageConfig(p, profiles);
+    const values = { ...usageValuesFor(p, profiles), wholeNode: true };
+    for (const mode of ["slurm", "interactive"]) {
+      const result = buildUsage(p, values, mode, profiles);
+      if (p.mig) { assert.ok(result.error); continue; }
+      assert.ok(!result.error, p.id);
+      for (const option of ["--exclusive", `--cpus-per-task=${config.maxCpus}`, "--mem=0"]) assert.ok(result.code.includes(option));
+      if (config.maxGpus) assert.ok(result.code.includes(`--gpus=${config.gpuType ? config.gpuType + ":" : ""}${config.maxGpus}`));
+      assert.equal(values.cpus, "4");
+      assert.equal(values.memory, "32");
+    }
+  }
+});
+
+test("Data Machine requires its account, paired CPU units and proper MIG resources", () => {
+  for (const id of ["data-cpu", "data-gpu", "data-mig"]) {
+    const p = profiles.find(p => p.id === id);
+    const values = usageValuesFor(p, profiles);
+    assert.equal(values.account, "data-machine");
+    assert.ok(buildUsage(p, { ...values, account: "" }).error);
+    assert.ok(buildUsage(p, { ...values, cpus: "3" }).error);
+    assert.ok(buildUsage(p, values).code.includes("--account=data-machine"));
+  }
+  const p = profiles.find(p => p.id === "data-mig");
+  assert.equal(usageConfig(p).maxGpus, 28);
+  assert.ok(buildUsage(p, usageValuesFor(p)).code.includes("--gpus=a100_slice:1"));
+  assert.ok(buildUsage(p, { ...usageValuesFor(p), gpus: "29" }).error);
+});
+
+test("Grace uses ARM setup, special constraints and untargeted GPU type; CPU Grace has no GPU", () => {
+  for (const id of ["grace-hopper", "grace-hopper-003", "grace-grace"]) {
+    const p = profiles.find(p => p.id === id);
+    const values = usageValuesFor(p);
+    const { code } = buildUsage(p, values);
+    assert.ok(code.includes("--constraint=NOAUTO:grace"));
+    assert.ok(code.includes("source /cvmfs/software.eessi.io/versions/2023.06/init/bash"));
+    assert.equal(code.includes("--gpus=1"), id !== "grace-grace");
+    assert.ok(buildUsage(p, { ...values, time: "04:00:00" }).error);
+  }
+  for (const p of profiles.filter(p => p.id.startsWith("vim-"))) assert.ok(buildUsage(p, usageValuesFor(p)).code.includes("--constraint=NOAUTO:vim"));
+});
+
+test("development pages generate compute allocations, never dev-node reservations", () => {
+  const expected = { "dev-amd24": "genoa-768", "dev-amd24-h200": "h200-4", "dev-amd20": "rome-996", "dev-amd20-v100": "v100s", "dev-intel18": "skl-367" };
+  for (const [id, target] of Object.entries(expected)) {
+    const p = profiles.find(p => p.id === id);
+    const config = usageConfig(p, profiles);
+    assert.equal(config.target.id, target);
+    assert.equal(config.devNode, id);
+    assert.ok(buildUsage(p, usageValuesFor(p, profiles), "slurm", profiles).code.includes(`--nodelist=${config.nodes[0]}`));
   }
 });

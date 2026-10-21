@@ -173,6 +173,11 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .resource-stepper, .resource-input { display: flex; align-items: center; min-height: 54px; background: #fff; border: 1px solid #d5dfec; border-radius: 12px; box-shadow: 0 2px 5px #243b5505; }
 .resource-stepper { padding: 4px; }
 .resource-fields input { width: 100%; min-width: 0; min-height: 44px; padding: 10px; background: transparent; border: 0; border-radius: 8px; color: #2e4562; font: inherit; font-size: 16px; }
+.resource-fields select { width: 100%; min-width: 0; min-height: 52px; padding: 10px; border: 0; border-radius: 12px; background: #fff; color: #2e4562; font: inherit; font-size: 15px; }
+.resource-fields select:focus-visible { outline: 2px solid #9bbce8; outline-offset: -2px; }
+.usage-panel .usage-notice { padding: 16px; margin: 16px 0 20px; border: 1px solid #cfdef1; border-radius: 12px; background: #edf4fd; color: #456180; text-align: left; }
+.usage-notice p + p { margin-top: 10px; }
+.usage-notice pre { margin-top: 12px; }
 .resource-stepper input { padding: 4px 0; text-align: center; appearance: textfield; -moz-appearance: textfield; }
 .resource-stepper input::-webkit-inner-spin-button, .resource-stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .resource-stepper button { flex: 0 0 44px; min-height: 44px; border: 0; border-radius: 8px; background: #edf2f9; color: #45668e; font-size: 22px; }

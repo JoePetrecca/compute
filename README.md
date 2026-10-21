@@ -52,8 +52,16 @@ Reviewed October 20, 2026 against ICER’s [cluster](https://docs.icer.msu.edu/C
 
 Run `node --test tests/*.test.mjs` to validate profile coverage, node ranges, physical-resource counts, both diagram views, component panels, and resource-request templates. These checks do not replace a visual browser review.
 
-## Usage-tab prototype
+## Usage instructions
 
-Select **Genoa · Hopper · 4 GPUs**, then **How to use this computer**. The centered builder generates a single-node, single-task Slurm script or reserved interactive shell command with CPU, system RAM, whole-GPU, wall-time, and optional account settings. The `nfh` feature constraint selects the four-GPU H200 node family. Interactive mode separately explains SSH access to the shared `dev-amd24-h200` node; SSH does not reserve the builder's resources.
+Every ICER configuration has a **How to use this computer** tab; Moria retains its specifications-only panel. The centered builder generates a single-node, single-task Slurm script or reserved interactive shell command with CPU, system RAM, GPU/slice, wall-time, account, and target-node settings. A target-node selector pins exactly **one** node from the selected configuration, never its whole node range. A busy selected node can increase queue time. Custom settings are retained per profile during the page session.
 
-Templates live in `scripts/usage.js`. They are not submitted automatically or tested against a live allocation. Inventory ceilings are not guarantees of scheduler-available resources; account, partition, and time policies still apply. Replace the program/environment placeholders before submitting a batch script. Request syntax follows ICER's [GPU requests](https://docs.icer.msu.edu/Requesting_GPUs/) and [job constraints](https://docs.icer.msu.edu/Job_Constraints/) documentation.
+Request logic and development-to-compute mappings live in `scripts/usage.js`:
+
+- Development pages show shared SSH access first in Interactive mode. Resource controls target a named, similar compute configuration, whose memory or hardware may differ. SSH does not reserve resources. A100/L40S and Grace/Data Machine pages do not invent matching development hardware.
+- CPU-only configurations omit GPU controls/directives. GPU profiles request the appropriate type; Grace Hopper follows ICER's untyped GPU request example under `NOAUTO:grace`.
+- Grace and VIM use their documented `NOAUTO` constraints. Grace scripts initialize the ARM module environment; software must be ARM-compatible and non-owner jobs must be under four hours.
+- Data Machine requires approved `data-machine` account membership and even scheduler-CPU requests. MIG uses `a100_slice` and 10 GB slices, not full cards; whole-node requests are unavailable for that profile. Live MIG partitioning remains unverified.
+- Whole-node requests are under Advanced with a queue warning, using `--exclusive` and `--mem=0`. Memory limits for custom requests are approximate inventory ceilings (published TB values use 1000 GB per TB), not guarantees of scheduler-available GiB.
+
+Templates are not submitted automatically or tested against a live allocation; account, partition, and time policies still apply. Replace the program/environment placeholders before submitting. Request syntax follows ICER's [GPU requests](https://docs.icer.msu.edu/Requesting_GPUs/), [job constraints](https://docs.icer.msu.edu/Job_Constraints/), [job specifications](https://docs.icer.msu.edu/List_of_Job_Specifications/), [Grace](https://docs.icer.msu.edu/Getting_Started_with_Grace_Hopper_and_Grace_Grace/), and [Data Machine](https://docs.icer.msu.edu/Using_the_Data_Machine/) documentation.
