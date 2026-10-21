@@ -1,5 +1,5 @@
 {
-  "id": "h200-4", "label": "Hopper H200 · 4 GPUs", "group": "ICER · GPU", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
+  "id": "h200-4", "label": "Genoa · Hopper · 4 GPUs", "group": "ICER · GPU", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
   "gpu": "H200", "gpuCount": 4, "vram": "141 GB", "gpuForm": "SXM", "nvlink": "Yes", "ssd": "960 GB", "cluster": "amd24",
   "nodeRange": "nfh-[000–005]", "nodeCount": 6, "sourceKey": "cluster"
 }

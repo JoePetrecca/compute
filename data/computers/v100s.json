@@ -1,5 +1,5 @@
 {
-  "id": "v100s", "label": "Volta V100S · 178 GB RAM", "group": "ICER · GPU", "cpu": "Intel Xeon Platinum 8260", "cores": 48, "memory": "178 GB",
+  "id": "v100s", "label": "Cascade Lake · Volta · 4 GPUs · 178 GB RAM", "group": "ICER · GPU", "cpu": "Intel Xeon Platinum 8260", "cores": 48, "memory": "178 GB",
   "gpu": "V100S", "gpuCount": 4, "vram": "32 GB", "gpuForm": "PCIe", "nvlink": "Mixed; verify node", "ssd": "412 GB", "cluster": "amd20-v100",
   "nodeRange": "nvf-[000–016,018–020]", "nodeCount": 20, "sourceKey": "cluster"
 }
