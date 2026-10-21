@@ -72,6 +72,7 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .part rect { stroke-width: 1.4; transition: stroke .2s, filter .2s; }
 .part:hover > rect, .part:focus-visible > rect { stroke: #718eae; stroke-width: 2; }
 .part text { pointer-events: none; font-family: inherit; fill: #293648; }
+.component-icon { pointer-events: none; }
 .part .label { font-size: 29px; font-weight: 550; letter-spacing: -.6px; }
 .part .sub { font-size: 17px; fill: #6c788a; }
 .wire { fill: none; stroke: #a9b5c4; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }

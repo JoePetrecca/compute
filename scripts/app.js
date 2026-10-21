@@ -47,7 +47,10 @@ function choose(id) {
 }
 
 function part(kind, x, y, width, height, title, subtitle, extra = "") {
-  return `<g class="part" data-part="${kind}" tabindex="0" role="button" aria-label="${esc(title)}"><rect class="${kind === "memory" || kind === "vram" ? "memory" : kind === "npu" ? "accelerator" : kind === "gpu" || kind === "discrete" ? "gpu" : "cpu"}-box" x="${x}" y="${y}" width="${width}" height="${height}" rx="18"/>${extra}<text class="label" x="${x + width / 2}" y="${y + height / 2 - 4}" text-anchor="middle">${esc(title)}</text><text class="sub" x="${x + width / 2}" y="${y + height / 2 + 24}" text-anchor="middle">${esc(subtitle)}</text></g>`;
+  const type = kind === "memory" || kind === "vram" ? "memory" : kind === "npu" ? "accelerator" : kind === "gpu" || kind === "discrete" ? "gpu" : "cpu";
+  const icon = type === "accelerator" ? "npu" : type;
+  const top = y + (height - 105) / 2;
+  return `<g class="part" data-part="${kind}" tabindex="0" role="button" aria-label="${esc(title)}"><rect class="${type}-box" x="${x}" y="${y}" width="${width}" height="${height}" rx="18"/>${extra}<image class="component-icon" href="assets/icons/${icon}.svg" x="${x + width / 2 - 36}" y="${top}" width="72" height="48" aria-hidden="true"/><text class="label" x="${x + width / 2}" y="${top + 75}" text-anchor="middle">${esc(title)}</text><text class="sub" x="${x + width / 2}" y="${top + 101}" text-anchor="middle">${esc(subtitle)}</text></g>`;
 }
 function wire(path, label, x, y) { return `<path class="wire" d="${path}"/>${label ? `<g class="part" data-part="interconnect" tabindex="0" role="button"><rect x="${x - 75}" y="${y - 18}" width="150" height="28" fill="transparent"/><text class="wire-label" x="${x}" y="${y}" text-anchor="middle">${esc(label)}</text></g>` : ""}`; }
 
