@@ -68,7 +68,8 @@ test("development titles use architectures and GPU workload subtitles stay disti
   ];
   for (const [id, label] of expected) {
     const p = profiles.find((p) => p.id === id);
-    assert.equal(p.label, label);
+    assert.equal(p.label, id);
+    assert.equal(p.secondaryLabel, label);
     assert.ok(p.nodes.includes(id));
     assert.equal(sidebarSubtitle(p, "workload"), p.gpu ? "Compile, debug & short GPU tests" : "Compile, debug & short tests");
     if (p.gpu) assert.equal(sidebarSubtitle(p, "specs"), `${p.vram}/GPU · ${p.memory} RAM`);
@@ -121,6 +122,8 @@ test("every view and clickable component renders usable information", async () =
   app = app.replace(/^import .*\n/, "").replace("loadProfiles().catch", "globalThis.ready = loadProfiles().catch");
   vm.runInContext(app, context);
   await context.ready;
+  assert.deepEqual(manifest.slice(0, 5), ["dev-amd24", "dev-amd24-h200", "dev-amd20", "dev-amd20-v100", "dev-intel18"]);
+  assert.ok(elements.get("#computer-list").innerHTML.includes('<strong>dev-amd24</strong><small class="profile-subname">Dev · Genoa</small>'));
   for (const group of ["CPU", "GPU", "Data Machine", "Development", "Superchips"]) assert.ok(elements.get("#computer-list").innerHTML.includes(`data-group="ICER · ${group}"`));
   assert.equal(vm.runInContext("state.diagramView", context), "simple");
   assert.equal(vm.runInContext("state.sidebarMode", context), "specs");
