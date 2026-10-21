@@ -131,7 +131,12 @@ function renderDiagram() {
   const superchip = p.group === "ICER · Superchips";
   if (p.layout === "grace-grace") drawing = (detailed ? '<rect class="frame" x="20" y="15" width="965" height="410" rx="28"/>' : '<rect class="frame" x="45" y="80" width="910" height="430" rx="28"/><text class="subsystem-title" x="75" y="120">Grace–Grace CPU Superchip</text>') + drawing;
   const height = p.gpu && p.layout !== "grace-hopper" ? (detailed ? 400 : 300) + gpuBankHeight(p) + 45 : detailed && !p.gpu ? 430 : 620;
-  $("#diagram").innerHTML = `<svg class="${superchip ? "superchip-diagram" : ""}" viewBox="0 0 1000 ${height}" role="img" aria-label="${esc(p.label)} architecture diagram">${superchip ? superchipGradients() : ""}${drawing}</svg>`;
+  const topologyNote = p.layout === "grace-hopper"
+    ? "Conceptual layout · Grace CPU ↔ Hopper GPU uses coherent NVLink-C2C; not an exact wiring map."
+    : p.gpu
+      ? `${p.gpu === "L40S" ? "PCIe · no NVLink." : p.nvlink === "Yes" ? "GPU-to-GPU NVLink documented." : "GPU connections are schematic."} Exact wiring and PCIe peer-access support are unverified; no direct-link or switch topology is implied.`
+      : "Conceptual layout · exact memory attachment and interconnect wiring are not verified.";
+  $("#diagram").innerHTML = `<svg class="${superchip ? "superchip-diagram" : ""}" viewBox="0 0 1000 ${height}" role="img" aria-label="${esc(p.label)} architecture diagram">${superchip ? superchipGradients() : ""}${drawing}</svg><p class="topology-note">${esc(topologyNote)}</p>`;
 }
 
 function showInspector(kind) {

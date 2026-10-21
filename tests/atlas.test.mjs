@@ -141,6 +141,11 @@ test("every view and clickable component renders usable information", async () =
       vm.runInContext(`state.diagramView = '${view}'; choose('${profile.id}'); details();`, context);
       const svg = elements.get("#diagram").innerHTML;
       assert.ok(svg.includes("<svg"), `${profile.id}/${view}`);
+      assert.ok(svg.includes('class="topology-note"'));
+      if (profile.gpu === "L40S") assert.ok(svg.includes("PCIe · no NVLink."));
+      if (profile.gpu === "H200" && profile.nvlink === "Yes") assert.ok(svg.includes("GPU-to-GPU NVLink documented."));
+      if (profile.gpu && profile.layout !== "grace-hopper") assert.ok(svg.includes("peer-access support are unverified"));
+      if (profile.layout === "grace-hopper") assert.ok(svg.includes("coherent NVLink-C2C"));
       assert.ok(!svg.includes("undefined") && !svg.includes("NaN"), profile.id);
       assert.equal(svg.includes('class="superchip-diagram"'), profile.group === "ICER · Superchips");
       if (profile.group === "ICER · Superchips") {
