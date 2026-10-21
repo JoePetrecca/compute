@@ -70,20 +70,25 @@ function serverDiagram(p) {
   return diagram;
 }
 function dualCpuDiagram(p) {
-  let diagram = part("cpu-0", 65, 50, 210, 150, "CPU 1", `${p.coresPerSocket} cores`)
-    + part("cpu-1", 355, 50, 210, 150, "CPU 2", `${p.coresPerSocket} cores`)
-    + wire("M275 125H355", "Infinity Fabric", 315, 35, "cpu-interconnect")
-    + wire("M170 200V245H840V200 M460 200V245", "", 0, 0)
-    + part("memory", 690, 50, 280, 150, p.memory, "Total system RAM");
+  let diagram = `<g class="part" data-part="cpu" tabindex="0" role="button" aria-label="CPU subsystem: two sockets, ${p.cores} physical cores"><rect class="cpu-subsystem" x="45" y="40" width="550" height="280" rx="25"/></g>`
+    + `<text class="subsystem-title" x="70" y="75">CPU · 2 sockets · ${p.cores} cores total</text>`
+    + part("cpu-0", 75, 110, 210, 180, "CPU 1", `${p.coresPerSocket} cores`)
+    + part("cpu-1", 355, 110, 210, 180, "CPU 2", `${p.coresPerSocket} cores`)
+    + wire("M285 200H355", "", 0, 0)
+    + '<g class="part fabric-link" data-part="cpu-interconnect" tabindex="0" role="button" aria-label="Infinity Fabric xGMI socket-to-socket connection"><rect x="301" y="113" width="38" height="174" rx="10"/><text transform="translate(325 200) rotate(-90)" text-anchor="middle">Infinity Fabric ⓘ</text></g>'
+    + `<rect class="memory-subsystem" x="680" y="40" width="285" height="280" rx="25"/><text class="subsystem-title" x="700" y="75">RAM · ${esc(p.memory)} total</text>`
+    + wire("M285 120V95H635V130H705 M565 260H705", "", 0, 0)
+    + part("memory", 705, 85, 235, 110, "RAM", "CPU 1 attached")
+    + part("memory", 705, 205, 235, 110, "RAM", "CPU 2 attached");
   if (p.gpu) {
-    diagram += wire("M460 245V300", "PCIe", 500, 282)
-      + '<rect class="frame" x="55" y="300" width="890" height="240" rx="25"/>'
-      + `<text class="wire-label" x="80" y="333">${p.gpuCount} × ${esc(p.gpu)}</text>`;
-    for (let i = 0; i < p.gpuCount; i++) diagram += part("gpu", 90 + i * (820 / p.gpuCount), 360, 780 / p.gpuCount, 135, p.gpu, `GPU ${i + 1} · ${p.vram}`);
+    diagram += wire("M320 320V365H500V400", "PCIe", 500, 385)
+      + '<rect class="frame" x="55" y="400" width="890" height="170" rx="25"/>'
+      + `<text class="wire-label" x="80" y="425">${p.gpuCount} × ${esc(p.gpu)} · socket attachment not shown</text>`;
+    for (let i = 0; i < p.gpuCount; i++) diagram += part("gpu", 90 + i * (820 / p.gpuCount), 435, 780 / p.gpuCount, 125, p.gpu, `GPU ${i + 1} · ${p.vram}`);
   } else {
-    diagram += `<text class="wire-label" x="500" y="355" text-anchor="middle">${esc(p.cpu)} · ${p.cores} physical cores across two processors</text>`;
+    diagram += `<text class="wire-label" x="500" y="365" text-anchor="middle">${esc(p.cpu)} · one machine, two physical CPU sockets</text>`;
   }
-  diagram += '<text class="wire-label" x="500" y="580" text-anchor="middle">Shared system overview · memory is distributed across CPU sockets (NUMA)</text>';
+  diagram += `<text class="wire-label" x="500" y="${p.gpu ? 595 : 405}" text-anchor="middle">Local RAM per socket · remote access over xGMI · exact memory split not specified</text>`;
   return diagram;
 }
 function graceDiagram(p) {
@@ -92,7 +97,7 @@ function graceDiagram(p) {
 function renderDiagram() {
   const p = state.current;
   const drawing = p.layout === "local" ? localDiagram(p) : p.layout === "grace-hopper" ? graceDiagram(p) : serverDiagram(p);
-  $("#diagram").innerHTML = `<svg viewBox="0 0 1000 600" role="img" aria-label="${esc(p.label)} architecture diagram">${drawing}</svg>`;
+  $("#diagram").innerHTML = `<svg viewBox="0 0 1000 ${p.sockets === 2 && !p.gpu ? 430 : 620}" role="img" aria-label="${esc(p.label)} architecture diagram">${drawing}</svg>`;
 }
 
 function showInspector(kind) {
@@ -111,7 +116,7 @@ function showInspector(kind) {
 
 function componentFacts(p, kind) {
   if (kind === "cpu-0" || kind === "cpu-1") return [["Processor", p.cpu], ["Physical cores · this chip", p.coresPerSocket], ...(p.id === "moria" ? [["Hardware threads · this chip", p.threadsPerSocket]] : []), ["Cache · this chip", p.cachePerSocket]];
-  if (kind === "cpu-interconnect") return [["Connection", "AMD Infinity Fabric"], ["Connects", "CPU 1 ↔ CPU 2"], ["Memory access", "Local and remote (NUMA)"]];
+  if (kind === "cpu-interconnect") return [["Connection", "Infinity Fabric · xGMI"], ["Connects", "The two CPUs’ I/O dies"], ["Purpose", "Coherent data and remote-memory access"], ["Physical link count", "Motherboard-dependent; not verified"]];
   if (kind === "cpu") return [["Processor type", p.cpuSpecs?.type || p.cpu], ["Physical cores", p.cpuSpecs?.cores || "Model-dependent"], ...(p.id === "moria" ? [["Thread capability", p.cpuSpecs.threads]] : []), ["Cache", p.cpuSpecs?.cache || "Model-dependent"]];
   if (kind === "gpu" || kind === "discrete") return [["Processor", p.gpu || (kind === "gpu" ? "Integrated GPU" : "Not specified")], ["GPU count", p.gpuCount || "Model-dependent"], ["Memory per GPU", p.vram || (kind === "gpu" ? "Shared system RAM" : "Model-dependent")], ["Connection", p.interconnect || (kind === "discrete" ? "PCIe" : "On-processor")]];
   if (kind === "memory") return [["Capacity", p.memory], ["Used by", p.layout === "grace-hopper" ? "Grace CPU / coherent access" : "CPU and host applications"], ["Scope", "Per machine / node"]];

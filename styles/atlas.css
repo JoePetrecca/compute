@@ -79,6 +79,11 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .wire { fill: none; stroke: #a9b5c4; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .wire-label { font-family: inherit; font-size: 14px; fill: #939ba7; }
 .cpu-box { fill: var(--cpu); stroke: #a9c8ef; }
+.cpu-subsystem { fill: #edf5ff; stroke: #a9c8ef; stroke-width: 1.5; }
+.memory-subsystem { fill: #f1f8f3; stroke: #b4d2bd; stroke-width: 1.5; }
+.subsystem-title { font-family: inherit; font-size: 17px; font-weight: 550; fill: #536b84; pointer-events: none; }
+.fabric-link rect { fill: #d5e6fa; stroke: #a0bddd; }
+.fabric-link text { font-size: 14px; fill: #55799f; }
 .gpu-box { fill: var(--gpu); stroke: #c7b7e5; }
 .memory-box { fill: var(--memory); stroke: #b4d2bd; }
 .accelerator-box { fill: var(--accelerator); stroke: #e7c5ac; }
