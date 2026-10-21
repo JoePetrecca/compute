@@ -16,7 +16,7 @@ export function sidebarSubtitle(p, mode) {
     return `${p.architecture} · model-dependent hardware`;
   }
   if (p.workloadLabel) return p.workloadLabel;
-  if (p.sourceKey === "development") return "Compile, debug & short tests";
+  if (p.sourceKey === "development") return "Compile, debug & tests";
   if (p.id === "moria") return "CUDA development & CPU analysis";
   if (p.localOptions) return "Local coding & small experiments";
   if (p.layout === "grace-hopper") return "Closely coupled CPU–GPU work";

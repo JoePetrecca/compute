@@ -71,7 +71,7 @@ test("development titles use architectures and GPU workload subtitles stay disti
     assert.equal(p.label, id);
     assert.equal(p.secondaryLabel, label);
     assert.ok(p.nodes.includes(id));
-    assert.equal(sidebarSubtitle(p, "workload"), p.gpu ? "Compile, debug & short GPU tests" : "Compile, debug & short tests");
+    assert.equal(sidebarSubtitle(p, "workload"), p.gpu ? "Compile, debug & GPU tests" : "Compile, debug & tests");
     if (p.gpu) assert.equal(sidebarSubtitle(p, "specs"), `${p.vram}/GPU · ${p.memory} RAM`);
   }
 });
