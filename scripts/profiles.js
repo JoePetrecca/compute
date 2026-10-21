@@ -24,8 +24,8 @@ export function sidebarSubtitle(p, mode) {
   if (p.mig) return "Small GPU experiments & inference";
   if (p.id === "data-cpu") return "Large-memory analysis & local I/O";
   if (p.id === "data-gpu") return "GPU analysis & data-heavy workflows";
-  if (p.gpu === "H200") return "Coordinated multi-GPU compute";
-  if (p.gpu === "L40S") return "Independent GPU jobs & rendering";
+  if (p.gpu === "H200") return "Large-model AI & scientific compute";
+  if (p.gpu === "L40S") return "AI inference, training & rendering";
   if (p.gpu === "A100") return "AI training & scientific compute";
   if (p.gpu) return "CUDA workloads & scientific compute";
   if (p.cpu.includes("9684X")) return "Cache-sensitive simulations";
