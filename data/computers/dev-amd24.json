@@ -1,4 +1,4 @@
 {
-  "id": "dev-amd24", "label": "dev-amd24", "group": "ICER · Development", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
+  "id": "dev-amd24", "label": "Dev · Genoa", "group": "ICER · Development", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
   "nodeRange": "dev-amd24", "nodeCount": 1, "sourceKey": "development"
 }

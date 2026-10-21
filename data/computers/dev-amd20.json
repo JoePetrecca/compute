@@ -1,4 +1,4 @@
 {
-  "id": "dev-amd20", "label": "dev-amd20", "group": "ICER · Development", "cpu": "AMD EPYC 7H12", "cores": 128, "memory": "960 GB",
+  "id": "dev-amd20", "label": "Dev · Rome", "group": "ICER · Development", "cpu": "AMD EPYC 7H12", "cores": 128, "memory": "960 GB",
   "nodeRange": "dev-amd20", "nodeCount": 1, "sourceKey": "development"
 }

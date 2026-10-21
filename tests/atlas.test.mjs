@@ -58,6 +58,23 @@ test("sidebar subtitles describe workloads or specifications without renaming ma
   assert.equal(milan.label, "Milan · 493 GB");
 });
 
+test("development titles use architectures and GPU workload subtitles stay distinct", () => {
+  const expected = [
+    ["dev-amd24", "Dev · Genoa"],
+    ["dev-amd24-h200", "Dev · Genoa · Hopper"],
+    ["dev-amd20", "Dev · Rome"],
+    ["dev-amd20-v100", "Dev · Cascade Lake · Volta"],
+    ["dev-intel18", "Dev · Skylake"]
+  ];
+  for (const [id, label] of expected) {
+    const p = profiles.find((p) => p.id === id);
+    assert.equal(p.label, label);
+    assert.ok(p.nodes.includes(id));
+    assert.equal(sidebarSubtitle(p, "workload"), p.gpu ? `Test ${p.gpu === "H200" ? "Hopper" : "Volta"} GPU code & CUDA environments` : "Compile, debug & short tests");
+    if (p.gpu) assert.equal(sidebarSubtitle(p, "specs"), `${p.vram}/GPU · ${p.memory} RAM`);
+  }
+});
+
 test("L40S and H200 explain cooperation without implying automatic GPU pooling", () => {
   const l40s = profiles.find((p) => p.id === "l40s-8");
   const h200 = profiles.find((p) => p.id === "h200-8");

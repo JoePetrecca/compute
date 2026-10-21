@@ -1,5 +1,6 @@
 {
-  "id": "dev-amd24-h200", "label": "dev-amd24-h200", "group": "ICER · Development", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
+  "id": "dev-amd24-h200", "label": "Dev · Genoa · Hopper", "group": "ICER · Development", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
+  "workloadLabel": "Test Hopper GPU code & CUDA environments",
   "gpu": "H200", "gpuCount": 4, "vram": "141 GB", "gpuForm": "SXM", "nvlink": "Verify development-node topology",
   "nodeRange": "dev-amd24-h200", "nodeCount": 1, "sourceKey": "development"
 }
