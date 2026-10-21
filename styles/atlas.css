@@ -54,6 +54,7 @@ nav section { margin-bottom: 10px; }
 .computer[aria-current=true] { background: #e1ebfa; color: #075bc0; }
 .profile-icon { width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 7px; background: #e2e7ed; color: #62738b; }
 .profile-icon svg { width: 18px; height: 18px; }
+.pickaxe-glyph { width: 20px; height: 20px; background: currentColor; -webkit-mask: url("../assets/icons/pickaxe.svg") center / contain no-repeat; mask: url("../assets/icons/pickaxe.svg") center / contain no-repeat; }
 .computer[aria-current=true] .profile-icon { background: #c9def8; color: #246aa8; }
 .computer strong { display: block; font-size: 12px; font-weight: 550; line-height: 1.4; }
 .computer small { display: block; color: #85858f; font-size: 10px; margin-top: 2px; }

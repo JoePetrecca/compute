@@ -127,6 +127,8 @@ test("every view and clickable component renders usable information", async () =
   await context.ready;
   assert.deepEqual(manifest.slice(0, 5), ["dev-amd24", "dev-amd24-h200", "dev-amd20", "dev-amd20-v100", "dev-intel18"]);
   assert.ok(elements.get("#computer-list").innerHTML.includes('<strong>dev-amd24</strong><small class="profile-subname">Dev · Genoa</small>'));
+  assert.equal((elements.get("#computer-list").innerHTML.match(/class="pickaxe-glyph"/g) || []).length, 1);
+  assert.match(elements.get("#computer-list").innerHTML, /data-id="moria"[^>]*><span class="profile-icon pickaxe-icon"/);
   for (const group of ["CPU", "GPU", "Data Machine", "Development", "Superchips"]) assert.ok(elements.get("#computer-list").innerHTML.includes(`data-group="ICER · ${group}"`));
   assert.equal(vm.runInContext("state.diagramView", context), "simple");
   assert.equal(vm.runInContext("state.sidebarMode", context), "specs");
