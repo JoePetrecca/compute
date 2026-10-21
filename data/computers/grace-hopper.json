@@ -1,7 +1,9 @@
 {
   "id": "grace-hopper",
   "label": "Grace Hopper",
-  "group": "ICER",
+  "group": "ICER · Grace",
+  "nodeCount": 3,
+  "ssd": "1.5 TB",
   "layout": "grace-hopper",
   "cpu": "NVIDIA Grace",
   "architecture": "ARM64",

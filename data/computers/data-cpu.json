@@ -1,0 +1,7 @@
+{
+  "id": "data-cpu", "label": "Data Machine · CPU", "group": "ICER · Data Machine", "cpu": "AMD EPYC 7763", "cores": 128, "memory": "2 TB",
+  "nodeRange": "acm-[048–049,070–071]", "nodeCount": 4, "ssd": "32 TB NVMe", "sourceKey": "data",
+  "goodFor": "Large-memory CPU analysis and substantial local I/O using 32 TB of node-local NVMe storage.",
+  "limitations": "No compute GPU. Local data must be staged and saved deliberately; it is not permanent shared storage. Data Machine account access is required.",
+  "note": "Data Machine page rounds RAM to 2 TB; the cluster table lists 2005 GB available to jobs. The published 256 scheduler CPUs are not 256 physical cores."
+}

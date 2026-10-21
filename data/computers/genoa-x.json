@@ -1,0 +1,6 @@
+{
+  "id": "genoa-x", "label": "Genoa-X · extra cache", "group": "ICER · CPU", "cpu": "AMD EPYC 9684X", "cores": 192, "memory": "768 GB",
+  "nodeRange": "agx-[000–001]", "nodeCount": 2, "ssd": "960 GB", "cluster": "amd24", "sourceKey": "cluster",
+  "goodFor": "Cache-sensitive simulations and CPU solvers with frequently reused data. Each processor has 1152 MB of L3 cache.",
+  "limitations": "Streaming workloads with little data reuse may gain little from the extra cache. More cache does not guarantee a proportional speedup, and there is no GPU."
+}

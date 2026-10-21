@@ -1,0 +1,6 @@
+{
+  "id": "data-gpu", "label": "Data Machine · A100", "group": "ICER · Data Machine", "cpu": "AMD EPYC 7713", "cores": 128, "memory": "512 GB",
+  "gpu": "A100", "gpuCount": 4, "vram": "80 GB", "gpuForm": "SXM", "nvlink": "Yes", "ssd": "32 TB NVMe",
+  "nodeRange": "nal-[004–006]", "nodeCount": 3, "sourceKey": "data",
+  "note": "Data Machine account access is required. The named-node table lists these as full GPUs; surrounding prose disagrees on the count of partitioned nodes. Verify current configuration when allocating."
+}

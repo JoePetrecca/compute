@@ -1,7 +1,10 @@
 {
   "id": "acm",
   "label": "ACM CPU nodes",
-  "group": "ICER",
+  "group": "ICER · CPU",
+  "nodeCount": 48,
+  "cluster": "amd22",
+  "ssd": "412 GB",
   "layout": "server",
   "cpu": "AMD EPYC 7763",
   "architecture": "x86-64",

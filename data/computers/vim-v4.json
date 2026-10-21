@@ -1,0 +1,7 @@
+{
+  "id": "vim-v4", "label": "VIM · 5.86 TB", "group": "ICER · CPU", "cpu": "Intel Xeon E7-8867 v4", "cores": 144, "memory": "5.86 TB",
+  "nodeRange": "vim-002", "nodeCount": 1, "ssd": "3.7 TB", "cluster": "intel16", "sourceKey": "cluster",
+  "goodFor": "CPU analysis whose working set genuinely needs nearly six terabytes of RAM on one node.",
+  "limitations": "GPU workloads, AVX-512-only code, and assuming large RAM means fast cores. Older hardware may have fewer software packages available.",
+  "note": "Must be explicitly requested with --constraint=NOAUTO:vim."
+}

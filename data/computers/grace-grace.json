@@ -1,0 +1,10 @@
+{
+  "id": "grace-grace", "label": "Grace–Grace · ncc-000", "group": "ICER · Grace", "layout": "grace-grace",
+  "cpu": "NVIDIA Grace", "architecture": "ARM64", "cores": 144, "sockets": 2, "coresPerSocket": 72,
+  "cachePerSocket": "117 MB L3", "cpuLink": "NVLink-C2C", "memory": "480 GB", "ssd": "3.5 TB",
+  "nodeRange": "ncc-000", "nodeCount": 1, "sourceKey": "grace",
+  "description": "Two connected Grace CPUs, 144 physical cores, and no GPU.",
+  "goodFor": "Parallel Arm-compatible CPU analysis and simulations that benefit from many cores and memory bandwidth.",
+  "limitations": "No GPU: CUDA GPU kernels cannot execute here. x86-only binaries need ARM64-compatible replacements. Non-owner jobs must be under four hours.",
+  "note": "ICER lists 480 GB total memory for this node. Request with --constraint=NOAUTO:grace; buy-in rules apply."
+}

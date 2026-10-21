@@ -1,0 +1,29 @@
+{
+  "reviewed": "2026-10-20",
+  "sources": {
+    "cluster": { "label": "ICER · Cluster resources", "url": "https://docs.icer.msu.edu/Cluster_Resources/" },
+    "grace": { "label": "ICER · NVIDIA Grace nodes", "url": "https://docs.icer.msu.edu/Getting_Started_with_Grace_Hopper_and_Grace_Grace/" },
+    "data": { "label": "ICER · Data Machine resources", "url": "https://docs.icer.msu.edu/Using_the_Data_Machine/" },
+    "development": { "label": "ICER · Development nodes", "url": "https://docs.icer.msu.edu/development_nodes/" },
+    "gpu": { "label": "ICER · GPU resources", "url": "https://docs.icer.msu.edu/GPU_resources/" }
+  },
+  "cpus": {
+    "AMD EPYC 9654": { "generation": "Zen 4", "coresPerSocket": 96, "cachePerSocket": "384 MB L3" },
+    "AMD EPYC 9684X": { "generation": "Zen 4 · 3D V-Cache", "coresPerSocket": 96, "cachePerSocket": "1152 MB L3" },
+    "AMD EPYC 7763": { "generation": "Zen 3", "coresPerSocket": 64, "cachePerSocket": "256 MB L3" },
+    "AMD EPYC 7713": { "generation": "Zen 3", "coresPerSocket": 64, "cachePerSocket": "256 MB L3" },
+    "AMD EPYC 7H12": { "generation": "Zen 2", "coresPerSocket": 64, "cachePerSocket": "256 MB L3" },
+    "Intel Xeon 8358": { "generation": "Ice Lake", "coresPerSocket": 32, "cachePerSocket": "48 MB L3" },
+    "Intel Xeon Platinum 8260": { "generation": "Cascade Lake", "coresPerSocket": 24, "cachePerSocket": "35.75 MB L3" },
+    "Intel Xeon Gold 6148": { "generation": "Skylake", "coresPerSocket": 20, "cachePerSocket": "27.5 MB L3" },
+    "Intel Xeon E7-8867 v3": { "generation": "Haswell", "coresPerSocket": 16, "cachePerSocket": "45 MB L3" },
+    "Intel Xeon E7-8867 v4": { "generation": "Broadwell", "coresPerSocket": 18, "cachePerSocket": "45 MB L3" }
+  },
+  "gpus": {
+    "H200": { "architecture": "Hopper", "capability": "9.0", "goodFor": "Large-memory AI training and inference, and supported FP64 scientific computation.", "limitations": "A model and its working state must fit in 141 GB per GPU or be explicitly distributed. Multiple GPUs require parallel software, not just a larger allocation." },
+    "L40S": { "architecture": "Ada Lovelace", "capability": "8.9", "goodFor": "FP32 and mixed-precision AI, inference, rendering, and independent GPU jobs.", "limitations": "FP64-heavy scientific solvers and communication-heavy multi-GPU jobs. These cards lack NVLink and have 48 GB each." },
+    "A100": { "architecture": "Ampere", "capability": "8.0", "goodFor": "Supported mixed-precision AI and FP64 scientific workloads.", "limitations": "Memory is per GPU, not an automatically combined pool. ICER’s 80 GB SXM and 40 GB PCIe configurations differ in both capacity and NVLink connectivity." },
+    "V100S": { "architecture": "Volta", "capability": "7.0", "goodFor": "Compatible CUDA workloads and FP64 scientific computation fitting within 32 GB per GPU.", "limitations": "Large models beyond 32 GB per GPU, newer GPU-specific features, and assuming every nvf node has identical NVLink wiring." },
+    "V100": { "architecture": "Volta", "capability": "7.0", "goodFor": "Compatible CUDA scientific workloads and explicitly parallel multi-GPU work.", "limitations": "Large per-GPU memory requirements and software requiring newer GPU architectures. Eight cards do not automatically form a single memory pool." }
+  }
+}

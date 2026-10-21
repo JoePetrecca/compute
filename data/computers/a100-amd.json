@@ -1,0 +1,5 @@
+{
+  "id": "a100-amd", "label": "A100 80 GB · nal", "group": "ICER · GPU", "cpu": "AMD EPYC 7713", "cores": 128, "memory": "512 GB",
+  "gpu": "A100", "gpuCount": 4, "vram": "80 GB", "gpuForm": "SXM", "nvlink": "Yes", "ssd": "1.92 TB", "cluster": "amd21",
+  "nodeRange": "nal-[000–003,008–010]", "nodeCount": 7, "sourceKey": "cluster"
+}

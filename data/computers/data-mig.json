@@ -1,0 +1,8 @@
+{
+  "id": "data-mig", "label": "Data Machine · A100 slices", "group": "ICER · Data Machine", "cpu": "AMD EPYC 7713", "cores": 128, "memory": "512 GB",
+  "gpu": "A100", "gpuCount": 4, "vram": "80 GB", "sliceMemory": "10 GB", "slicesPerGpu": 7, "mig": true, "gpuForm": "SXM", "nvlink": "Partition-dependent", "ssd": "32 TB NVMe",
+  "nodeRange": "nal-007", "nodeCount": 1, "sourceKey": "data",
+  "goodFor": "Smaller inference and CUDA experiments that fit within an allocated 10 GB GPU slice.",
+  "limitations": "A slice receives only part of a physical A100’s compute and memory. Do not assume full-card performance, full-card NVLink behavior, or automatic pooling of slices.",
+  "note": "Data Machine account access required. Named-node resource table lists nal-007 with seven 10 GB slices per physical GPU; surrounding prose conflicts on the number of partitioned nodes. Verify the live allocation."
+}

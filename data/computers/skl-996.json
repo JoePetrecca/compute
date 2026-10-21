@@ -1,0 +1,4 @@
+{
+  "id": "skl-996", "label": "Skylake · 996 GB", "group": "ICER · CPU", "cpu": "Intel Xeon Gold 6148", "cores": 40, "memory": "996 GB",
+  "nodeRange": "skl-012", "nodeCount": 1, "ssd": "413 GB", "cluster": "intel18", "sourceKey": "cluster"
+}

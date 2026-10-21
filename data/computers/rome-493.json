@@ -1,0 +1,4 @@
+{
+  "id": "rome-493", "label": "Rome · 493 GB", "group": "ICER · CPU", "cpu": "AMD EPYC 7H12", "cores": 128, "memory": "493 GB",
+  "nodeRange": "amr-[000–101,136–238,252–253]", "nodeCount": 207, "ssd": "412 GB", "cluster": "amd20", "sourceKey": "cluster"
+}

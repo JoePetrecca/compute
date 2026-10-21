@@ -1,0 +1,4 @@
+{
+  "id": "skl-745", "label": "Skylake · 745 GB", "group": "ICER · CPU", "cpu": "Intel Xeon Gold 6148", "cores": 40, "memory": "745 GB",
+  "nodeRange": "skl-[140–147]", "nodeCount": 8, "ssd": "413 GB", "cluster": "intel18", "sourceKey": "cluster"
+}

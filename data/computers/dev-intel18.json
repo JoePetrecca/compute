@@ -1,0 +1,4 @@
+{
+  "id": "dev-intel18", "label": "dev-intel18", "group": "ICER · Development", "cpu": "Intel Xeon Gold 6148", "cores": 40, "memory": "377 GB",
+  "nodeRange": "dev-intel18", "nodeCount": 1, "sourceKey": "development"
+}

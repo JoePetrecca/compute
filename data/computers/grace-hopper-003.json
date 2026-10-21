@@ -1,0 +1,6 @@
+{
+  "id": "grace-hopper-003", "label": "Grace Hopper · nch-003", "group": "ICER · Grace", "layout": "grace-hopper",
+  "cpu": "NVIDIA Grace", "architecture": "ARM64", "cores": 72, "memory": "480 GB",
+  "gpu": "GH200", "gpuCount": 1, "vram": "96 GB", "interconnect": "NVLink-C2C",
+  "nodeRange": "nch-003", "nodeCount": 1, "ssd": "3.2 TB", "sourceKey": "grace", "inherit": "grace-hopper"
+}

@@ -1,0 +1,4 @@
+{
+  "id": "genoa-768", "label": "Genoa · 768 GB", "group": "ICER · CPU", "cpu": "AMD EPYC 9654", "cores": 192, "memory": "768 GB",
+  "nodeRange": "agg-[000–047]", "nodeCount": 48, "ssd": "960 GB", "cluster": "amd24", "sourceKey": "cluster"
+}
