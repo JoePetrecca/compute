@@ -58,9 +58,9 @@ nav section { margin-bottom: 10px; }
 .computer strong { display: block; font-size: 12px; font-weight: 550; line-height: 1.4; }
 .computer small { display: block; color: #85858f; font-size: 10px; margin-top: 2px; }
 .computer[aria-current=true] small { color: #6087b5; }
-.computer[data-id="moria"][aria-current=true] { background: #eee3d8; color: #775136; }
-.computer[data-id="moria"][aria-current=true] .profile-icon { background: #dfcbb7; color: #805938; }
-.computer[data-id="moria"][aria-current=true] small { color: #886b53; }
+.computer[data-id="moria"][aria-current=true] { background: linear-gradient(120deg, #dce0e5, #f4f5f7, #e2e5e9); color: #454c57; }
+.computer[data-id="moria"][aria-current=true] .profile-icon { background: #cdd2d9; color: #505966; }
+.computer[data-id="moria"][aria-current=true] small { color: #626b77; }
 .computer .profile-subname { font-weight: 600; margin-bottom: 2px; }
 [data-group="ICER · GPU"] { --selected-bg: #eee3fa; --selected-text: #7135a0; --selected-icon-bg: #dfcaf2; --selected-muted: #81579f; }
 [data-group="ICER · Data Machine"] { --selected-bg: #fff0df; --selected-text: #9b4c0d; --selected-icon-bg: #f8d9b6; --selected-muted: #94663b; }
