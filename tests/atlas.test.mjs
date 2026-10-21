@@ -114,7 +114,7 @@ test("every view and clickable component renders usable information", async () =
     localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
     document: {
       querySelector(key) {
-        if (!elements.has(key)) elements.set(key, { value: "", listeners: {}, addEventListener(type, handler) { this.listeners[type] = handler; }, insertAdjacentHTML(position, html) { this.adjacentHTML = html; }, focus() {}, showModal() {}, close() {}, setAttribute() {}, removeAttribute() {} });
+        if (!elements.has(key)) elements.set(key, { value: "", listeners: {}, addEventListener(type, handler) { this.listeners[type] = handler; }, insertAdjacentHTML(position, html) { this.adjacentPosition = position; this.adjacentHTML = html; }, focus() {}, showModal() {}, close() {}, setAttribute() {}, removeAttribute() {} });
         return elements.get(key);
       },
       querySelectorAll: () => []
@@ -134,6 +134,10 @@ test("every view and clickable component renders usable information", async () =
   assert.equal(elements.get("#usage-panel").hidden, false);
   assert.equal(elements.get("#inspector").hidden, true);
   assert.ok(elements.get("#usage-panel").innerHTML.includes("Configure your resources"));
+  assert.equal(elements.get("#resource-form").adjacentPosition, "afterend");
+  assert.ok(elements.get("#resource-form").adjacentHTML.includes("Advanced · whole-node request"));
+  assert.ok(elements.get("#resource-form").adjacentHTML.includes("This can take a while."));
+  assert.ok(!elements.get("#resource-form").adjacentHTML.includes('class="whole-node-control" open'));
   assert.ok(elements.get("#usage-panel").innerHTML.includes('aria-label="Increase CPU cores"'));
   assert.ok(elements.get("#usage-output").innerHTML.includes('class="usage-terminal"'));
   assert.ok(elements.get("#usage-output").innerHTML.includes('class="usage-steps"'));
