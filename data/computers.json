@@ -1,5 +1,5 @@
 [
-  "intel", "amd", "moria",
+  "moria",
   "grace-hopper", "grace-hopper-003", "grace-grace",
   "h200-4", "h200-8", "l40s-8", "a100-amd", "a100-intel", "v100s", "v100s-017", "v100",
   "genoa-768", "genoa-2300", "genoa-1500", "genoa-x",

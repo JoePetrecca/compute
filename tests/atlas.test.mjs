@@ -13,7 +13,9 @@ const profiles = prepareProfiles(raw, hardware);
 
 test("manifest contains unique, complete profiles and valid node counts", () => {
   assert.equal(new Set(manifest).size, manifest.length);
-  assert.equal(profiles.length, 39);
+  assert.equal(profiles.length, 37);
+  assert.ok(!manifest.includes("intel") && !manifest.includes("amd"));
+  assert.ok(manifest.includes("moria"));
   for (const p of profiles) {
     assert.ok(p.id && p.label && p.cpu && p.memory && p.goodFor && p.limitations, p.id);
     if (p.group.startsWith("ICER")) {
