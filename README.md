@@ -52,6 +52,12 @@ Reviewed October 20, 2026 against ICER’s [cluster](https://docs.icer.msu.edu/C
 
 Run `node --test tests/*.test.mjs` to validate profile coverage, node ranges, physical-resource counts, both diagram views, component panels, and resource-request templates. These checks do not replace a visual browser review.
 
+## HPCC overview
+
+The **HPCC → The HPCC** sidebar entry assembles the represented ICER inventory into a gallery: one clickable miniature for each physical node, grouped by configuration and category. It reuses each configuration's Simple diagram through SVG symbols, so an eight-node configuration shows eight copies and a twenty-node configuration shows twenty. Selecting a miniature opens that configuration's details.
+
+The current snapshot represents **640 compute nodes plus 5 shared development nodes**, excluding Moria. Totals count physical CPU cores and physical GPUs on compute nodes; MIG slices are not counted as additional physical cards. This is not a live availability display, network topology map, or an inventory of unlisted gateways/storage infrastructure.
+
 ## Usage instructions
 
 Every ICER configuration has a **How to use this computer** tab; Moria retains its specifications-only panel. Development pages are SSH-only, without resource selectors or batch submissions. On compute configurations, the centered builder generates a single-node, single-task Slurm script or reserved interactive shell command with CPU, system RAM, GPU/slice, wall-time, account, and target-node settings. Multi-node configurations default to **Any node in this configuration**, or you can select a particular host. Both choices request exactly **one** node, never the whole node range. Pinning a busy host can increase queue time. Custom settings are retained per profile during the page session.

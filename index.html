@@ -36,11 +36,12 @@
       <header class="page-header">
         <div>
           <p class="eyebrow" id="computer-group"></p>
-          <h1 id="computer-name">Compute Atlas</h1>
+          <h1 id="computer-name" tabindex="-1">Compute Atlas</h1>
           <p class="summary" id="computer-summary"></p>
         </div>
         <button id="details-button" class="secondary info" aria-label="Configuration details and sources">i</button>
       </header>
+      <section id="cluster-panel" class="cluster-panel" aria-label="HPCC cluster inventory" hidden></section>
       <section id="controls" class="controls" hidden aria-label="Local machine options">
         <span class="architecture" id="architecture"></span>
         <label><input id="integrated-gpu" type="checkbox" checked> Integrated GPU</label>

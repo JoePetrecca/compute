@@ -1,7 +1,8 @@
 import { prepareProfiles, sidebarSubtitle } from "./profiles.js";
 import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "./usage.js";
+import { clusterInventory } from "./cluster.js";
 const $ = (selector) => document.querySelector(selector);
-const state = { profiles: [], current: null, sidebarMode: readSidebarMode(), diagramView: "simple", local: { integrated: true, npu: false, discrete: false } };
+const state = { profiles: [], current: null, clusterOverview: false, sidebarMode: readSidebarMode(), diagramView: "simple", local: { integrated: true, npu: false, discrete: false } };
 
 let componentCopy = {};
 let hardware = {};
@@ -12,7 +13,7 @@ let usageProfileId = null;
 const savedUsage = new Map();
 
 function setMachineTab(tab) {
-  const enabled = Boolean(usageConfig(state.current, state.profiles));
+  const enabled = !state.clusterOverview && Boolean(usageConfig(state.current, state.profiles));
   const usage = enabled && tab === "usage";
   $("#machine-tabs").hidden = !enabled;
   $("#inspector").hidden = usage;
@@ -175,10 +176,21 @@ function renderList() {
   const query = $("#search").value.trim().toLowerCase();
   const visible = state.profiles.filter((p) => [p.label, p.secondaryLabel, p.group, p.cpu, p.gpu, p.memory, p.cluster, p.nodeRange, sidebarSubtitle(p, "workload"), sidebarSubtitle(p, "specs"), ...p.nodes].filter(Boolean).join(" ").toLowerCase().includes(query));
   const groups = [...new Set(visible.map((p) => p.group))];
-  $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section data-group="${esc(group)}" class="${group === "ICER · Superchips" ? "superchip-group" : ""}"><h2 class="group-title">${esc(group === "ICER · Superchips" ? "Superchips" : group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${p.id === state.current?.id}"><span class="profile-icon${p.id === "moria" ? " pickaxe-icon" : ""}" aria-hidden="true">${sidebarIcon(p)}</span><span><strong>${esc(p.label)}</strong>${p.secondaryLabel ? `<small class="profile-subname">${esc(p.secondaryLabel)}</small>` : ""}<small>${esc(subline(p))}</small></span></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
+  $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section data-group="${esc(group)}" class="${group === "ICER · Superchips" ? "superchip-group" : ""}"><h2 class="group-title">${esc(group === "ICER · Superchips" ? "Superchips" : group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${!state.clusterOverview && p.id === state.current?.id}"><span class="profile-icon${p.id === "moria" ? " pickaxe-icon" : ""}" aria-hidden="true">${sidebarIcon(p)}</span><span><strong>${esc(p.label)}</strong>${p.secondaryLabel ? `<small class="profile-subname">${esc(p.secondaryLabel)}</small>` : ""}<small>${esc(subline(p))}</small></span></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
+  if (!query || "hpcc full cluster overview all nodes".includes(query)) {
+    const inventory = clusterInventory(state.profiles);
+    const overview = `<section data-group="HPCC"><h2 class="group-title">HPCC</h2><button class="computer" data-id="hpcc" aria-current="${state.clusterOverview}"><span class="profile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="8" height="7" rx="1.5"/><rect x="14" y="3" width="8" height="7" rx="1.5"/><rect x="8" y="16" width="8" height="6" rx="1.5"/><path d="M6 10v3h12v-3m-6 3v3"/></svg></span><span><strong>The HPCC</strong><small>${inventory.totalNodes} nodes · full cluster overview</small></span></button></section>`;
+    $("#computer-list").innerHTML = overview + (visible.length ? $("#computer-list").innerHTML : "");
+  }
 }
 
 function choose(id) {
+  if (id === "hpcc") { showCluster(); return; }
+  state.clusterOverview = false;
+  $("#cluster-panel").hidden = true;
+  $("#cluster-panel").innerHTML = "";
+  $("#diagram").hidden = false;
+  $("#details-button").hidden = false;
   state.current = state.profiles.find((p) => p.id === id);
   const p = state.current;
   $("#computer-group").textContent = p.group;
@@ -212,8 +224,8 @@ function localDiagram(p) {
   else diagram += '<text class="wire-label" x="500" y="420" text-anchor="middle">One local machine</text>';
   return diagram;
 }
-function serverDiagram(p) {
-  if (p.sockets === 2 && state.diagramView === "detailed") return dualCpuDiagram(p);
+function serverDiagram(p, view = state.diagramView) {
+  if (p.sockets === 2 && view === "detailed") return dualCpuDiagram(p);
   if (!p.gpu) return part("cpu", 80, 160, 340, 190, "CPU", `${p.cores} cores`) + wire("M420 255H575", "", 0, 0) + part("memory", 575, 160, 350, 190, p.memory, "System RAM");
   let diagram = part("cpu", 100, 50, 330, 150, "CPU", `${p.cores} cores`) + wire("M430 125H590", "", 0, 0) + part("memory", 590, 50, 300, 150, p.memory, "System RAM") + wire("M265 200V270H500V300", "PCIe", 500, 263);
   diagram += gpuBank(p, 300);
@@ -255,15 +267,48 @@ function graceDiagram(p) {
 function superchipGradients() {
   return '<defs><linearGradient id="grace-blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bcd9fa"/><stop offset=".3" stop-color="#eff7ff"/><stop offset=".48" stop-color="#d7eaff"/><stop offset="1" stop-color="#a8cbee"/></linearGradient><linearGradient id="hopper-purple" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d5c1f4"/><stop offset=".3" stop-color="#faf5ff"/><stop offset=".48" stop-color="#eadcff"/><stop offset="1" stop-color="#c6abe9"/></linearGradient><linearGradient id="memory-green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bcdfc7"/><stop offset=".3" stop-color="#f0fff4"/><stop offset=".48" stop-color="#d9f1e0"/><stop offset="1" stop-color="#a8d2b6"/></linearGradient><linearGradient id="superchip-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff7df"/><stop offset=".45" stop-color="#fffdf7"/><stop offset="1" stop-color="#f7ebcd"/></linearGradient></defs>';
 }
+function diagramContent(p, view = state.diagramView) {
+  let drawing = p.layout === "local" ? localDiagram(p) : p.layout === "grace-hopper" ? graceDiagram(p) : serverDiagram(p, view);
+  const detailed = p.sockets === 2 && view === "detailed";
+  const superchip = p.group === "ICER · Superchips";
+  if (p.layout === "grace-grace") drawing = (detailed ? '<rect class="frame" x="20" y="15" width="965" height="410" rx="28"/>' : '<rect class="frame" x="45" y="80" width="910" height="430" rx="28"/><text class="subsystem-title" x="75" y="120">Grace–Grace CPU Superchip</text>') + drawing;
+  const height = p.gpu && p.layout !== "grace-hopper" ? (detailed ? 400 : 300) + gpuBankHeight(p) + 45 : detailed && !p.gpu ? 430 : 620;
+  return { drawing, height, superchip };
+}
+
+function showCluster() {
+  state.clusterOverview = true;
+  const inventory = clusterInventory(state.profiles);
+  $("#computer-group").textContent = "HPCC · Cluster overview";
+  $("#computer-name").textContent = "The HPCC";
+  $("#computer-summary").textContent = "Every represented ICER node, assembled from the individual machine diagrams. One miniature = one physical node.";
+  for (const selector of ["#controls", "#diagram-view-controls", "#machine-tabs", "#inspector", "#usage-panel", "#details-button", "#diagram"]) $(selector).hidden = true;
+  $("#diagram").innerHTML = "";
+  const pictures = new Map(inventory.configurations.map(p => [p.id, diagramContent(p, "simple")]));
+  const symbols = inventory.configurations.map(p => {
+    const picture = pictures.get(p.id);
+    const drawing = picture.drawing.replace(/\s(?:data-part|tabindex|role|aria-label)="[^"]*"/g, "");
+    return `<symbol id="cluster-${esc(p.id)}" class="${picture.superchip ? "superchip-diagram" : ""}" viewBox="0 0 1000 ${picture.height}">${drawing}</symbol>`;
+  }).join("");
+  const stats = [["Compute nodes", inventory.computeNodes], ["Development nodes", inventory.developmentNodes], ["Physical CPU cores · compute", inventory.physicalCores], ["Physical GPUs · compute", inventory.physicalGpus]];
+  $("#cluster-panel").innerHTML = `
+    <div class="cluster-stats">${stats.map(([label, count]) => `<div><strong>${count.toLocaleString("en-US")}</strong><span>${label}</span></div>`).join("")}</div>
+    <p class="cluster-note">${inventory.totalNodes} nodes across ${inventory.configurations.length} configurations in this atlas. Static inventory—not live availability, a network topology map, or one shared memory pool. Gateways, storage services, and other unlisted infrastructure are not pictured. Moria is separate.</p>
+    <p class="cluster-hint">Select any miniature to open its configuration. Node names identify each physical machine.</p>
+    <svg class="cluster-definitions" width="0" height="0" aria-hidden="true" focusable="false">${superchipGradients()}<defs>${symbols}</defs></svg>
+    ${inventory.groups.map(group => `<section class="cluster-group" data-cluster-group="${esc(group.name)}"><h2>${esc(group.name.replace("ICER · ", ""))}<span>${group.profiles.reduce((sum, p) => sum + p.nodes.length, 0)} nodes</span></h2>${group.profiles.map(p => {
+      const picture = pictures.get(p.id);
+      return `<section class="cluster-configuration" data-configuration="${esc(p.id)}"><header><h3>${esc(p.label)}</h3><span>${p.nodes.length} ${p.nodes.length === 1 ? "node" : "nodes"} · ${esc(p.memory)} RAM per node${p.gpu ? ` · ${p.gpuCount} × ${esc(p.gpu)} per node` : ""}</span></header><div class="cluster-node-grid">${p.nodes.map(node => `<button type="button" class="cluster-node" data-profile="${esc(p.id)}" data-node="${esc(node)}" aria-label="${esc(node)} · open ${esc(p.label)}"><svg viewBox="0 0 1000 ${picture.height}" aria-hidden="true" focusable="false"><use href="#cluster-${esc(p.id)}" width="1000" height="${picture.height}"/></svg><span>${esc(node)}</span></button>`).join("")}</div></section>`;
+    }).join("")}</section>`).join("")}`;
+  $("#cluster-panel").hidden = false;
+  renderList();
+}
+
 function renderDiagram() {
   const p = state.current;
   $("#diagram-view-controls").hidden = p.sockets !== 2;
   document.querySelectorAll("[data-diagram-view]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.diagramView === state.diagramView)));
-  let drawing = p.layout === "local" ? localDiagram(p) : p.layout === "grace-hopper" ? graceDiagram(p) : serverDiagram(p);
-  const detailed = p.sockets === 2 && state.diagramView === "detailed";
-  const superchip = p.group === "ICER · Superchips";
-  if (p.layout === "grace-grace") drawing = (detailed ? '<rect class="frame" x="20" y="15" width="965" height="410" rx="28"/>' : '<rect class="frame" x="45" y="80" width="910" height="430" rx="28"/><text class="subsystem-title" x="75" y="120">Grace–Grace CPU Superchip</text>') + drawing;
-  const height = p.gpu && p.layout !== "grace-hopper" ? (detailed ? 400 : 300) + gpuBankHeight(p) + 45 : detailed && !p.gpu ? 430 : 620;
+  const { drawing, height, superchip } = diagramContent(p);
   const topologyNote = p.layout === "grace-hopper"
     ? "Conceptual layout · Grace CPU ↔ Hopper GPU uses coherent NVLink-C2C; not an exact wiring map."
     : p.gpu
@@ -315,6 +360,13 @@ function details() {
 }
 
 $("#search").addEventListener("input", renderList);
+$("#cluster-panel").addEventListener("click", (event) => {
+  const node = event.target.closest("[data-profile]");
+  if (node) {
+    choose(node.dataset.profile);
+    $("#computer-name").focus();
+  }
+});
 $("#machine-tabs").addEventListener("click", (event) => {
   const button = event.target.closest("[data-machine-tab]");
   if (button) setMachineTab(button.dataset.machineTab);

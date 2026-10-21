@@ -99,6 +99,34 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .diagram { width: 100%; margin: 14px auto; max-width: 1100px; }
 .diagram svg { display: block; width: 100%; height: auto; overflow: hidden; }
 .topology-note { margin: 8px 16px; color: #656570; font-size: 12px; line-height: 1.5; text-align: center; }
+.cluster-panel { margin: 28px 0; }
+.cluster-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.cluster-stats > div { padding: 20px; border: 1px solid #dce5ef; border-radius: 14px; background: linear-gradient(140deg, #eff5fd, #fafcff); }
+.cluster-stats strong { display: block; color: #355d8c; font-size: 28px; font-weight: 550; letter-spacing: -.8px; }
+.cluster-stats span { color: #6b7c91; font-size: 11px; }
+.cluster-note { margin: 18px 0 8px; color: #747e8b; font-size: 12px; line-height: 1.7; }
+.cluster-hint { margin: 0 0 28px; color: #526e90; font-size: 12px; }
+.cluster-definitions { position: absolute; overflow: hidden; pointer-events: none; }
+.cluster-group { --cluster-accent: #527cae; --cluster-tint: #f0f5fc; margin: 30px 0; }
+.cluster-group[data-cluster-group="ICER · GPU"] { --cluster-accent: #8962aa; --cluster-tint: #f5f0fb; }
+.cluster-group[data-cluster-group="ICER · Development"] { --cluster-accent: #b06b6b; --cluster-tint: #fcf2f2; }
+.cluster-group[data-cluster-group="ICER · Data Machine"] { --cluster-accent: #af7a40; --cluster-tint: #fff7ec; }
+.cluster-group[data-cluster-group="ICER · Superchips"] { --cluster-accent: #a1813b; --cluster-tint: #fffbef; }
+.cluster-group > h2 { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 16px; padding: 12px 16px; border-left: 3px solid var(--cluster-accent); border-radius: 0 10px 10px 0; background: var(--cluster-tint); color: var(--cluster-accent); font-size: 17px; font-weight: 550; }
+.cluster-group > h2 span { font-size: 12px; font-weight: 400; }
+.cluster-configuration { padding: 18px; margin: 12px 0; border: 1px solid #e4e8ee; border-radius: 14px; }
+.cluster-configuration > header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 14px; }
+.cluster-configuration h3 { margin: 0; color: #40516a; font-size: 13px; font-weight: 600; }
+.cluster-configuration > header > span { color: #7d8794; font-size: 11px; }
+.cluster-node-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.cluster-node { min-width: 0; min-height: 100px; padding: 6px 5px 9px; border: 1px solid #e4e9f0; border-radius: 10px; background: #fafbfd; transition: background .15s, border-color .15s, box-shadow .15s; }
+.cluster-node:hover { background: var(--cluster-tint); border-color: var(--cluster-accent); box-shadow: 0 3px 10px #243b5510; }
+.cluster-node svg { display: block; width: 100%; height: 78px; pointer-events: none; }
+.cluster-node span { display: block; color: #687a90; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+[data-group="HPCC"] .profile-icon { color: #4f8096; background: #dfedf2; }
+[data-group="HPCC"] .computer[aria-current=true] { color: #276277; background: #dceef3; }
+[data-group="HPCC"] .computer[aria-current=true] .profile-icon { color: #306c82; background: #c8e2eb; }
+[data-group="HPCC"] .computer[aria-current=true] small { color: #5b8190; }
 .part { cursor: pointer; outline: none; }
 .part rect { stroke-width: 1.4; transition: stroke .2s, filter .2s; }
 .part:hover > rect, .part:focus-visible > rect { stroke: #718eae; stroke-width: 2; }
@@ -254,6 +282,7 @@ dialog h2 { font-size: 27px; font-weight: 550; letter-spacing: -.7px; margin: 0 
   .computer small { font-size: 11px; }
 }
 @media (max-width: 1000px) {
+  .cluster-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .resource-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .usage-steps { grid-template-columns: 1fr; gap: 16px; }
   .app { grid-template-columns: 240px minmax(0, 1fr); }
@@ -265,6 +294,9 @@ dialog h2 { font-size: 27px; font-weight: 550; letter-spacing: -.7px; margin: 0 
   .controls label { font-size: 11px; }
 }
 @media (max-width: 700px) {
+  .cluster-configuration { padding: 12px; }
+  .cluster-node-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .cluster-stats > div { padding: 14px; }
   .resource-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .machine-tabs { padding: 0; }
   .machine-tabs button { padding: 14px 10px; font-size: 12px; }

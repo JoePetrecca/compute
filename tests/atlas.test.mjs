@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 import { prepareProfiles, expandNodes, sidebarSubtitle } from "../scripts/profiles.js";
 import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "../scripts/usage.js";
+import { clusterInventory } from "../scripts/cluster.js";
 
 const root = new URL("../", import.meta.url);
 const json = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
@@ -112,6 +113,7 @@ test("every view and clickable component renders usable information", async () =
     usageConfig,
     usageValuesFor,
     graceSetup,
+    clusterInventory,
     prepareProfiles,
     sidebarSubtitle,
     localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
@@ -272,6 +274,35 @@ test("every view and clickable component renders usable information", async () =
       }
     }
   }
+  vm.runInContext("state.diagramView = 'detailed'; choose('hpcc');", context);
+  assert.equal(elements.get("#cluster-panel").hidden, false);
+  assert.equal(elements.get("#diagram").hidden, true);
+  assert.equal(elements.get("#diagram").innerHTML, "");
+  for (const selector of ["#machine-tabs", "#inspector", "#usage-panel", "#details-button", "#diagram-view-controls"]) assert.equal(elements.get(selector).hidden, true, selector);
+  const overview = elements.get("#cluster-panel").innerHTML;
+  assert.equal((overview.match(/class="cluster-node"/g) || []).length, 645);
+  assert.equal((overview.match(/<symbol /g) || []).length, 36);
+  assert.ok(!overview.includes('data-profile="moria"'));
+  assert.ok(!overview.includes('tabindex="0"'));
+  assert.ok(!overview.includes("undefined") && !overview.includes("NaN"));
+  assert.equal((overview.match(/data-profile="v100"/g) || []).length, 8);
+  assert.equal((overview.match(/data-profile="v100s"/g) || []).length, 20);
+  assert.equal((overview.match(/data-profile="rome-493"/g) || []).length, 207);
+  for (const p of profiles.filter(p => p.group.startsWith("ICER"))) {
+    const drawing = vm.runInContext(`diagramContent(state.profiles.find(p => p.id === '${p.id}'), 'simple').drawing`, context).replace(/\s(?:data-part|tabindex|role|aria-label)="[^"]*"/g, "");
+    assert.ok(overview.includes(drawing), `${p.id}: uses the existing diagram`);
+    for (const node of p.nodes) assert.ok(overview.includes(`data-node="${node}"`));
+  }
+  assert.ok(elements.get("#computer-list").innerHTML.includes('data-id="hpcc" aria-current="true"'));
+  elements.get("#cluster-panel").listeners.click({ target: { closest: () => ({ dataset: { profile: "v100s" } }) } });
+  assert.equal(vm.runInContext("state.current.id", context), "v100s");
+  assert.equal(elements.get("#cluster-panel").hidden, true);
+  assert.equal(elements.get("#cluster-panel").innerHTML, "");
+  assert.equal(elements.get("#diagram").hidden, false);
+  assert.equal(elements.get("#details-button").hidden, false);
+  elements.get("#search").value = "hpcc";
+  vm.runInContext("renderList();", context);
+  assert.ok(elements.get("#computer-list").innerHTML.includes('data-id="hpcc"'));
   elements.get("#search").value = "agg-073";
   vm.runInContext("renderList()", context);
   assert.ok(elements.get("#computer-list").innerHTML.includes('data-id="genoa-2300"'));
