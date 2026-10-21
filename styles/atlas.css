@@ -43,6 +43,11 @@ aside {
 .search input { width: 100%; border: 1px solid #dedfe4; background: #eaeaec; border-radius: 9px; padding: 9px 12px; color: var(--ink); font-size: 12px; }
 nav { overflow: auto; flex: 1; min-height: 0; padding: 0 12px 16px; scrollbar-width: thin; scrollbar-color: #cccdd2 transparent; }
 .group-title { margin: 0; padding: 9px 9px 6px; color: #85858e; font-size: 10px; font-weight: 600; letter-spacing: .7px; text-transform: uppercase; }
+.superchip-group .group-title { color: #96701d; }
+.superchip-group .profile-icon { background: #f0e6ce; color: #967127; }
+.superchip-group .computer[aria-current=true] { background: linear-gradient(120deg, #f2e5c1, #fff9e9); color: #775618; }
+.superchip-group .computer[aria-current=true] .profile-icon { background: #e9d6a6; color: #85601b; }
+.superchip-group .computer[aria-current=true] small { color: #907644; }
 nav section { margin-bottom: 10px; }
 .computer { display: flex; gap: 10px; align-items: center; text-align: left; width: 100%; border: 0; border-radius: 9px; background: transparent; padding: 10px; margin: 1px 0; transition: background .15s; }
 .computer:hover { background: #e9eaee; }
@@ -95,6 +100,11 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .memory-box { fill: var(--memory); stroke: #b4d2bd; }
 .accelerator-box { fill: var(--accelerator); stroke: #e7c5ac; }
 .frame { fill: #fafbfc; stroke: #dfe3e9; stroke-width: 1.4; }
+.superchip-diagram .frame { fill: url(#superchip-gold); stroke: #ceb573; stroke-width: 1.5; }
+.superchip-diagram .cpu-box { fill: url(#grace-blue); stroke: #91b7df; }
+.superchip-diagram .gpu-box { fill: url(#hopper-purple); stroke: #b296d4; }
+.superchip-diagram .cpu-subsystem { fill: #f0f6ff; stroke: #b1c9e5; }
+.superchip-diagram .subsystem-title { fill: #846b36; }
 .inspector { border: 1px solid #dce5f0; border-top: 3px solid #8fb4df; border-radius: 14px; background: #f9fafc; padding: 20px 24px; margin-top: 12px; min-height: 48px; box-shadow: 0 4px 18px #223b5b06; }
 .inspector-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
 .inspector .inspector-heading .eyebrow { display: block; margin: 0; color: #647a92; }

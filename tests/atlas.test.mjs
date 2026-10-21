@@ -73,6 +73,14 @@ test("V100S bandwidth comparison is per GPU, not extra capacity or guaranteed sp
   assert.equal(profiles.find((p) => p.id === "v100").vram, profiles.find((p) => p.id === "v100s").vram);
 });
 
+test("superchip titles distinguish storage without including node names", () => {
+  const superchips = profiles.filter((p) => p.group === "ICER · Superchips");
+  assert.deepEqual(superchips.map((p) => p.label), ["Grace Hopper · 1.5 TB SSD", "Grace Hopper · 3.2 TB SSD", "Grace–Grace · CPU Superchip"]);
+  for (const p of superchips) assert.ok(!/nch-|ncc-/.test(p.label));
+  assert.equal(sidebarSubtitle(superchips[0], "workload"), "Closely coupled CPU–GPU work");
+  assert.equal(sidebarSubtitle(superchips[2], "workload"), "Parallel Arm CPU workloads");
+});
+
 test("every view and clickable component renders usable information", async () => {
   const elements = new Map();
   const storage = new Map([["compute-sidebar-mode", "specs"]]);
@@ -109,6 +117,10 @@ test("every view and clickable component renders usable information", async () =
       const svg = elements.get("#diagram").innerHTML;
       assert.ok(svg.includes("<svg"), `${profile.id}/${view}`);
       assert.ok(!svg.includes("undefined") && !svg.includes("NaN"), profile.id);
+      assert.equal(svg.includes('class="superchip-diagram"'), profile.group === "ICER · Superchips");
+      if (profile.group === "ICER · Superchips") {
+        for (const gradient of ["grace-blue", "hopper-purple", "superchip-gold"]) assert.ok(svg.includes(`id="${gradient}"`));
+      }
       const gpuCount = [...svg.matchAll(/data-part="gpu"/g)].length;
       assert.equal(gpuCount, profile.gpuCount || (profile.localOptions ? 1 : 0), profile.id);
       const kinds = [undefined, ...new Set([...svg.matchAll(/data-part="([^"]+)"/g)].map((m) => m[1]))];

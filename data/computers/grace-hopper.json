@@ -1,7 +1,7 @@
 {
   "id": "grace-hopper",
-  "label": "Grace Hopper",
-  "group": "ICER · Grace",
+  "label": "Grace Hopper · 1.5 TB SSD",
+  "group": "ICER · Superchips",
   "nodeCount": 3,
   "ssd": "1.5 TB",
   "layout": "grace-hopper",

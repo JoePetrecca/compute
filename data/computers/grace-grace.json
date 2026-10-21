@@ -1,5 +1,5 @@
 {
-  "id": "grace-grace", "label": "Grace–Grace · ncc-000", "group": "ICER · Grace", "layout": "grace-grace",
+  "id": "grace-grace", "label": "Grace–Grace · CPU Superchip", "group": "ICER · Superchips", "layout": "grace-grace",
   "cpu": "NVIDIA Grace", "architecture": "ARM64", "cores": 144, "sockets": 2, "coresPerSocket": 72,
   "cachePerSocket": "117 MB L3", "cpuLink": "NVLink-C2C", "memory": "480 GB", "ssd": "3.5 TB",
   "nodeRange": "ncc-000", "nodeCount": 1, "sourceKey": "grace",

@@ -43,7 +43,7 @@ function renderList() {
   const query = $("#search").value.trim().toLowerCase();
   const visible = state.profiles.filter((p) => [p.label, p.group, p.cpu, p.gpu, p.memory, p.cluster, p.nodeRange, sidebarSubtitle(p, "workload"), sidebarSubtitle(p, "specs"), ...p.nodes].filter(Boolean).join(" ").toLowerCase().includes(query));
   const groups = [...new Set(visible.map((p) => p.group))];
-  $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section><h2 class="group-title">${esc(group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${p.id === state.current?.id}"><span class="profile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3"/></svg></span><span><strong>${esc(p.label)}</strong><small>${esc(subline(p))}</small></span></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
+  $("#computer-list").innerHTML = visible.length ? groups.map((group) => `<section class="${group === "ICER · Superchips" ? "superchip-group" : ""}"><h2 class="group-title">${esc(group === "ICER · Superchips" ? "Superchips" : group)}</h2>${visible.filter((p) => p.group === group).map((p) => `<button class="computer" data-id="${esc(p.id)}" aria-current="${p.id === state.current?.id}"><span class="profile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3"/></svg></span><span><strong>${esc(p.label)}</strong><small>${esc(subline(p))}</small></span></button>`).join("")}</section>`).join("") : '<p class="loading">No matching computers.</p>';
 }
 
 function choose(id) {
@@ -111,7 +111,7 @@ function dualCpuDiagram(p) {
   if (p.gpu) {
     diagram += wire("M320 320V365H500V400", "PCIe", 500, 385) + gpuBank(p, 400);
   } else {
-    diagram += `<text class="wire-label" x="500" y="365" text-anchor="middle">${esc(p.cpu)} · one machine, two physical CPU sockets</text>`;
+    diagram += `<text class="wire-label" x="500" y="365" text-anchor="middle">${esc(p.cpu)} · one machine, two physical ${p.layout === "grace-grace" ? "processors" : "CPU sockets"}</text>`;
   }
   diagram += `<text class="wire-label" x="500" y="${p.gpu ? 400 + gpuBankHeight(p) + 25 : 405}" text-anchor="middle">Local RAM per CPU · remote access over ${p.cpuLink === "NVLink-C2C" ? "NVLink-C2C" : "xGMI"} · exact memory split not specified</text>`;
   return diagram;
@@ -119,14 +119,19 @@ function dualCpuDiagram(p) {
 function graceDiagram(p) {
   return `<rect class="frame" x="70" y="55" width="860" height="500" rx="25"/><text class="wire-label" x="100" y="88">Grace Hopper Superchip</text>${part("cpu", 115, 130, 300, 165, "Grace CPU", "72 cores")}${part("gpu", 585, 130, 300, 165, "Hopper GPU", "GH200")}${wire("M415 212H585", "NVLink-C2C", 500, 192)}${wire("M265 295V385 M735 295V385", "", 0, 0)}${part("memory", 115, 385, 300, 125, p.memory, "CPU memory")}${part("vram", 585, 385, 300, 125, p.vram, "GPU memory")}`;
 }
+function superchipGradients() {
+  return '<defs><linearGradient id="grace-blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bcd9fa"/><stop offset=".3" stop-color="#eff7ff"/><stop offset=".48" stop-color="#d7eaff"/><stop offset="1" stop-color="#a8cbee"/></linearGradient><linearGradient id="hopper-purple" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d5c1f4"/><stop offset=".3" stop-color="#faf5ff"/><stop offset=".48" stop-color="#eadcff"/><stop offset="1" stop-color="#c6abe9"/></linearGradient><linearGradient id="superchip-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff7df"/><stop offset=".45" stop-color="#fffdf7"/><stop offset="1" stop-color="#f7ebcd"/></linearGradient></defs>';
+}
 function renderDiagram() {
   const p = state.current;
   $("#diagram-view-controls").hidden = p.sockets !== 2;
   document.querySelectorAll("[data-diagram-view]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.diagramView === state.diagramView)));
-  const drawing = p.layout === "local" ? localDiagram(p) : p.layout === "grace-hopper" ? graceDiagram(p) : serverDiagram(p);
+  let drawing = p.layout === "local" ? localDiagram(p) : p.layout === "grace-hopper" ? graceDiagram(p) : serverDiagram(p);
   const detailed = p.sockets === 2 && state.diagramView === "detailed";
+  const superchip = p.group === "ICER · Superchips";
+  if (p.layout === "grace-grace") drawing = (detailed ? '<rect class="frame" x="20" y="15" width="965" height="410" rx="28"/>' : '<rect class="frame" x="45" y="80" width="910" height="430" rx="28"/><text class="subsystem-title" x="75" y="120">Grace–Grace CPU Superchip</text>') + drawing;
   const height = p.gpu && p.layout !== "grace-hopper" ? (detailed ? 400 : 300) + gpuBankHeight(p) + 45 : detailed && !p.gpu ? 430 : 620;
-  $("#diagram").innerHTML = `<svg viewBox="0 0 1000 ${height}" role="img" aria-label="${esc(p.label)} architecture diagram">${drawing}</svg>`;
+  $("#diagram").innerHTML = `<svg class="${superchip ? "superchip-diagram" : ""}" viewBox="0 0 1000 ${height}" role="img" aria-label="${esc(p.label)} architecture diagram">${superchip ? superchipGradients() : ""}${drawing}</svg>`;
 }
 
 function showInspector(kind) {
