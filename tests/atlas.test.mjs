@@ -4,7 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 import { prepareProfiles, expandNodes, sidebarSubtitle } from "../scripts/profiles.js";
 import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "../scripts/usage.js";
-import { clusterInventory } from "../scripts/cluster.js";
+import { clusterInventory, clusterLayout } from "../scripts/cluster.js";
 
 const root = new URL("../", import.meta.url);
 const json = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
@@ -107,6 +107,8 @@ test("superchip titles distinguish storage without including node names", () => 
 test("every view and clickable component renders usable information", async () => {
   const elements = new Map();
   const storage = new Map([["compute-sidebar-mode", "specs"]]);
+  const mapMounts = [];
+  let mapDisposals = 0;
   const context = vm.createContext({
     buildUsage,
     usageDefaults,
@@ -114,6 +116,8 @@ test("every view and clickable component renders usable information", async () =
     usageValuesFor,
     graceSetup,
     clusterInventory,
+    clusterLayout,
+    mountClusterMap(options) { mapMounts.push(options); return () => mapDisposals++; },
     prepareProfiles,
     sidebarSubtitle,
     localStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) },
@@ -280,21 +284,26 @@ test("every view and clickable component renders usable information", async () =
   assert.equal(elements.get("#diagram").innerHTML, "");
   for (const selector of ["#machine-tabs", "#inspector", "#usage-panel", "#details-button", "#diagram-view-controls"]) assert.equal(elements.get(selector).hidden, true, selector);
   const overview = elements.get("#cluster-panel").innerHTML;
-  assert.equal((overview.match(/class="cluster-node"/g) || []).length, 645);
+  assert.equal((overview.match(/class="map-node"/g) || []).length, 645);
+  assert.equal((overview.match(/<svg /g) || []).length, 1);
   assert.equal((overview.match(/<symbol /g) || []).length, 36);
-  assert.ok(!overview.includes('data-profile="moria"'));
-  assert.ok(!overview.includes('tabindex="0"'));
+  assert.ok(!overview.includes('data-configuration="moria"'));
+  assert.equal((overview.match(/tabindex="0"/g) || []).length, 1);
   assert.ok(!overview.includes("undefined") && !overview.includes("NaN"));
-  assert.equal((overview.match(/data-profile="v100"/g) || []).length, 8);
-  assert.equal((overview.match(/data-profile="v100s"/g) || []).length, 20);
-  assert.equal((overview.match(/data-profile="rome-493"/g) || []).length, 207);
+  assert.equal((overview.match(/href="#cluster-v100"/g) || []).length, 8);
+  assert.equal((overview.match(/href="#cluster-v100s"/g) || []).length, 20);
+  assert.equal((overview.match(/href="#cluster-rome-493"/g) || []).length, 207);
+  for (const action of ["in", "out", "fit", "actual", "fullscreen"]) assert.ok(overview.includes(`data-map-action="${action}"`));
+  assert.equal(mapMounts.length, 1);
+  assert.equal(mapMounts[0].width, 7600);
   for (const p of profiles.filter(p => p.group.startsWith("ICER"))) {
     const drawing = vm.runInContext(`diagramContent(state.profiles.find(p => p.id === '${p.id}'), 'simple').drawing`, context).replace(/\s(?:data-part|tabindex|role|aria-label)="[^"]*"/g, "");
     assert.ok(overview.includes(drawing), `${p.id}: uses the existing diagram`);
     for (const node of p.nodes) assert.ok(overview.includes(`data-node="${node}"`));
   }
   assert.ok(elements.get("#computer-list").innerHTML.includes('data-id="hpcc" aria-current="true"'));
-  elements.get("#cluster-panel").listeners.click({ target: { closest: () => ({ dataset: { profile: "v100s" } }) } });
+  vm.runInContext("choose('v100s');", context);
+  assert.equal(mapDisposals, 1);
   assert.equal(vm.runInContext("state.current.id", context), "v100s");
   assert.equal(elements.get("#cluster-panel").hidden, true);
   assert.equal(elements.get("#cluster-panel").innerHTML, "");

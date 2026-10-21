@@ -54,7 +54,9 @@ Run `node --test tests/*.test.mjs` to validate profile coverage, node ranges, ph
 
 ## HPCC overview
 
-The **HPCC → The HPCC** sidebar entry assembles the represented ICER inventory into a gallery: one clickable miniature for each physical node, grouped by configuration and category. It reuses each configuration's Simple diagram through SVG symbols, so an eight-node configuration shows eight copies and a twenty-node configuration shows twenty. Selecting a miniature opens that configuration's details.
+The **HPCC → The HPCC** sidebar entry assembles the represented ICER inventory into **one massive, continuous SVG map**, with one miniature for each physical node. It reuses each configuration's Simple diagram through SVG symbols, so an eight-node configuration shows eight copies and a twenty-node configuration shows twenty. Category and configuration labels are part of the image—not separate gallery cards.
+
+Drag to pan, scroll or pinch to zoom, or use the zoom, Fit all, 100%, and Fullscreen controls. Keyboard controls are `+` / `-` for zoom, arrow keys for pan, and `0` or Home to fit everything. Hover a node for its name; individual configuration pages remain available in the sidebar. The map starts fitted to show the entire cluster and keeps diagrams sharp as you zoom.
 
 The current snapshot represents **640 compute nodes plus 5 shared development nodes**, excluding Moria. Totals count physical CPU cores and physical GPUs on compute nodes; MIG slices are not counted as additional physical cards. This is not a live availability display, network topology map, or an inventory of unlisted gateways/storage infrastructure.
 

@@ -1,6 +1,7 @@
 import { prepareProfiles, sidebarSubtitle } from "./profiles.js";
 import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "./usage.js";
-import { clusterInventory } from "./cluster.js";
+import { clusterInventory, clusterLayout } from "./cluster.js";
+import { mountClusterMap } from "./cluster-view.js";
 const $ = (selector) => document.querySelector(selector);
 const state = { profiles: [], current: null, clusterOverview: false, sidebarMode: readSidebarMode(), diagramView: "simple", local: { integrated: true, npu: false, discrete: false } };
 
@@ -11,6 +12,7 @@ let usageValues = { ...usageDefaults };
 let generatedUsage = "";
 let usageProfileId = null;
 const savedUsage = new Map();
+let disposeClusterMap = null;
 
 function setMachineTab(tab) {
   const enabled = !state.clusterOverview && Boolean(usageConfig(state.current, state.profiles));
@@ -186,6 +188,7 @@ function renderList() {
 
 function choose(id) {
   if (id === "hpcc") { showCluster(); return; }
+  if (disposeClusterMap) { disposeClusterMap(); disposeClusterMap = null; }
   state.clusterOverview = false;
   $("#cluster-panel").hidden = true;
   $("#cluster-panel").innerHTML = "";
@@ -277,11 +280,13 @@ function diagramContent(p, view = state.diagramView) {
 }
 
 function showCluster() {
+  if (disposeClusterMap) disposeClusterMap();
   state.clusterOverview = true;
   const inventory = clusterInventory(state.profiles);
+  const layout = clusterLayout(inventory);
   $("#computer-group").textContent = "HPCC · Cluster overview";
   $("#computer-name").textContent = "The HPCC";
-  $("#computer-summary").textContent = "Every represented ICER node, assembled from the individual machine diagrams. One miniature = one physical node.";
+  $("#computer-summary").textContent = "One enormous cluster. Every miniature is a physical node. Zoom in to explore; zoom out to take it all in.";
   for (const selector of ["#controls", "#diagram-view-controls", "#machine-tabs", "#inspector", "#usage-panel", "#details-button", "#diagram"]) $(selector).hidden = true;
   $("#diagram").innerHTML = "";
   const pictures = new Map(inventory.configurations.map(p => [p.id, diagramContent(p, "simple")]));
@@ -291,16 +296,17 @@ function showCluster() {
     return `<symbol id="cluster-${esc(p.id)}" class="${picture.superchip ? "superchip-diagram" : ""}" viewBox="0 0 1000 ${picture.height}">${drawing}</symbol>`;
   }).join("");
   const stats = [["Compute nodes", inventory.computeNodes], ["Development nodes", inventory.developmentNodes], ["Physical CPU cores · compute", inventory.physicalCores], ["Physical GPUs · compute", inventory.physicalGpus]];
+  const world = layout.groups.map(group => `<g class="map-section" data-map-group="${esc(group.name)}"><rect class="map-section-frame" x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" rx="20"/><text class="map-section-title" x="${group.x + 28}" y="${group.y + 48}">${esc(group.name.replace("ICER · ", ""))} · ${group.configurations.reduce((sum, block) => sum + block.nodes.length, 0)} nodes</text>${group.configurations.map(block => `<g class="map-configuration" data-configuration="${esc(block.profile.id)}"><rect class="map-configuration-frame" x="${block.x}" y="${block.y}" width="${block.width}" height="${block.height}" rx="12"/><text class="map-configuration-title" x="${block.x + 14}" y="${block.y + 27}">${esc(block.profile.label)}</text><text class="map-configuration-count" x="${block.x + 14}" y="${block.y + 48}">${block.nodes.length} ${block.nodes.length === 1 ? "node" : "nodes"} · ${esc(block.profile.memory)} RAM per node</text>${block.nodes.map(node => `<g class="map-node" data-node="${esc(node.name)}"><title>${esc(node.name)} · ${esc(block.profile.label)}</title><rect class="map-node-paper" x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height - 18}" rx="4"/><use href="#cluster-${esc(block.profile.id)}" x="${node.x + 2}" y="${node.y + 2}" width="${node.width - 4}" height="${node.height - 22}"/><text class="map-node-name" x="${node.x + node.width / 2}" y="${node.y + node.height - 3}" text-anchor="middle">${esc(node.name)}</text></g>`).join("")}</g>`).join("")}</g>`).join("");
   $("#cluster-panel").innerHTML = `
     <div class="cluster-stats">${stats.map(([label, count]) => `<div><strong>${count.toLocaleString("en-US")}</strong><span>${label}</span></div>`).join("")}</div>
-    <p class="cluster-note">${inventory.totalNodes} nodes across ${inventory.configurations.length} configurations in this atlas. Static inventory—not live availability, a network topology map, or one shared memory pool. Gateways, storage services, and other unlisted infrastructure are not pictured. Moria is separate.</p>
-    <p class="cluster-hint">Select any miniature to open its configuration. Node names identify each physical machine.</p>
-    <svg class="cluster-definitions" width="0" height="0" aria-hidden="true" focusable="false">${superchipGradients()}<defs>${symbols}</defs></svg>
-    ${inventory.groups.map(group => `<section class="cluster-group" data-cluster-group="${esc(group.name)}"><h2>${esc(group.name.replace("ICER · ", ""))}<span>${group.profiles.reduce((sum, p) => sum + p.nodes.length, 0)} nodes</span></h2>${group.profiles.map(p => {
-      const picture = pictures.get(p.id);
-      return `<section class="cluster-configuration" data-configuration="${esc(p.id)}"><header><h3>${esc(p.label)}</h3><span>${p.nodes.length} ${p.nodes.length === 1 ? "node" : "nodes"} · ${esc(p.memory)} RAM per node${p.gpu ? ` · ${p.gpuCount} × ${esc(p.gpu)} per node` : ""}</span></header><div class="cluster-node-grid">${p.nodes.map(node => `<button type="button" class="cluster-node" data-profile="${esc(p.id)}" data-node="${esc(node)}" aria-label="${esc(node)} · open ${esc(p.label)}"><svg viewBox="0 0 1000 ${picture.height}" aria-hidden="true" focusable="false"><use href="#cluster-${esc(p.id)}" width="1000" height="${picture.height}"/></svg><span>${esc(node)}</span></button>`).join("")}</div></section>`;
-    }).join("")}</section>`).join("")}`;
+    <div class="cluster-map" id="cluster-map"><div class="cluster-map-toolbar"><div><strong>${inventory.totalNodes} nodes. One view.</strong><span>Scroll / pinch to zoom · drag to pan</span></div><div class="cluster-map-controls" role="group" aria-label="Cluster map controls"><button type="button" data-map-action="out" aria-label="Zoom out">−</button><output id="cluster-zoom" aria-label="Zoom level">Fit</output><button type="button" data-map-action="in" aria-label="Zoom in">+</button><button type="button" data-map-action="fit">Fit all</button><button type="button" data-map-action="actual">100%</button><button type="button" data-map-action="fullscreen">Fullscreen</button></div></div>
+      <div id="cluster-viewport" class="cluster-viewport" tabindex="0" role="region" aria-label="Zoomable HPCC map. Use plus or minus to zoom, arrow keys to pan, and zero to fit all nodes.">
+        <svg id="cluster-canvas" class="cluster-canvas" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" role="img" aria-labelledby="cluster-map-title cluster-map-description"><title id="cluster-map-title">The HPCC · ${inventory.totalNodes} individual nodes</title><desc id="cluster-map-description">One miniature of the existing architecture diagram for each represented physical node, grouped by configuration. CPU, GPU, Data Machine, Superchip and shared development nodes; Moria is not part of the cluster.</desc>${superchipGradients()}<defs>${symbols}</defs><g id="cluster-world">${world}</g></svg>
+      </div><p class="cluster-map-status" role="status">Hover over a node for its name. Keyboard: + / − zoom, arrows pan, 0 fits everything. Use the sidebar to open individual configurations.</p>
+    </div>
+    <p class="cluster-note">${inventory.totalNodes} nodes across ${inventory.configurations.length} configurations in this atlas. Static inventory—not live availability, a network topology map, or one shared memory pool. Gateways, storage services, and other unlisted infrastructure are not pictured. Moria is separate.</p>`;
   $("#cluster-panel").hidden = false;
+  disposeClusterMap = mountClusterMap({ root: $("#cluster-map"), viewport: $("#cluster-viewport"), world: $("#cluster-world"), readout: $("#cluster-zoom"), width: layout.width, height: layout.height });
   renderList();
 }
 
@@ -360,13 +366,6 @@ function details() {
 }
 
 $("#search").addEventListener("input", renderList);
-$("#cluster-panel").addEventListener("click", (event) => {
-  const node = event.target.closest("[data-profile]");
-  if (node) {
-    choose(node.dataset.profile);
-    $("#computer-name").focus();
-  }
-});
 $("#machine-tabs").addEventListener("click", (event) => {
   const button = event.target.closest("[data-machine-tab]");
   if (button) setMachineTab(button.dataset.machineTab);
