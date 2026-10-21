@@ -1,6 +1,6 @@
 {
   "id": "dev-amd20-v100", "label": "Dev · Cascade Lake · Volta", "group": "ICER · Development", "cpu": "Intel Xeon Platinum 8260", "cores": 48, "memory": "187 GB",
-  "workloadLabel": "Test Volta GPU code & CUDA environments",
+  "workloadLabel": "Compile, debug & short GPU tests",
   "gpu": "V100S", "gpuCount": 4, "vram": "32 GB", "gpuForm": "PCIe", "nvlink": "Verify development-node topology",
   "nodeRange": "dev-amd20-v100", "nodeCount": 1, "sourceKey": "development"
 }

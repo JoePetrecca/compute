@@ -70,7 +70,7 @@ test("development titles use architectures and GPU workload subtitles stay disti
     const p = profiles.find((p) => p.id === id);
     assert.equal(p.label, label);
     assert.ok(p.nodes.includes(id));
-    assert.equal(sidebarSubtitle(p, "workload"), p.gpu ? `Test ${p.gpu === "H200" ? "Hopper" : "Volta"} GPU code & CUDA environments` : "Compile, debug & short tests");
+    assert.equal(sidebarSubtitle(p, "workload"), p.gpu ? "Compile, debug & short GPU tests" : "Compile, debug & short tests");
     if (p.gpu) assert.equal(sidebarSubtitle(p, "specs"), `${p.vram}/GPU · ${p.memory} RAM`);
   }
 });
