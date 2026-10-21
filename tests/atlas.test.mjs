@@ -55,6 +55,16 @@ test("sidebar subtitles describe workloads or specifications without renaming ma
   assert.equal(milan.label, "Milan · 493 GB");
 });
 
+test("L40S and H200 explain cooperation without implying automatic GPU pooling", () => {
+  const l40s = profiles.find((p) => p.id === "l40s-8");
+  const h200 = profiles.find((p) => p.id === "h200-8");
+  assert.match(l40s.description, /separate jobs.*cooperate over PCIe/);
+  assert.match(l40s.components["gpu-interconnect"].limitations, /depends on the allocated system/);
+  assert.match(h200.description, /NVLink-connected.*separate memory/);
+  assert.match(h200.limitations, /Not automatically one big GPU/);
+  assert.match(h200.components["gpu-interconnect"].limitations, /separate devices with separate memory/);
+});
+
 test("every view and clickable component renders usable information", async () => {
   const elements = new Map();
   const storage = new Map([["compute-sidebar-mode", "specs"]]);

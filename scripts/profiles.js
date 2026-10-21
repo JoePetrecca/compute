@@ -24,8 +24,8 @@ export function sidebarSubtitle(p, mode) {
   if (p.mig) return "Small GPU experiments & inference";
   if (p.id === "data-cpu") return "Large-memory analysis & local I/O";
   if (p.id === "data-gpu") return "GPU analysis & data-heavy workflows";
-  if (p.gpu === "H200") return "Large-model AI & scientific compute";
-  if (p.gpu === "L40S") return "AI inference, training & rendering";
+  if (p.gpu === "H200") return "Coordinated multi-GPU compute";
+  if (p.gpu === "L40S") return "Independent GPU jobs & rendering";
   if (p.gpu === "A100") return "AI training & scientific compute";
   if (p.gpu) return "CUDA workloads & scientific compute";
   if (p.cpu.includes("9684X")) return "Cache-sensitive simulations";
@@ -54,8 +54,8 @@ export function prepareProfiles(rawProfiles, hardware) {
     }
     if (p.cpu === "NVIDIA Grace") p.cpuSpecs ||= { type: `${p.cores === 144 ? "2 × " : ""}NVIDIA Grace · Arm Neoverse V2`, cores: p.cores === 144 ? "144 total · 72 per CPU" : "72", cache: "1 MB L2 per core · 117 MB L3 per CPU" };
     if (p.sockets === 2 && p.cpu.startsWith("AMD")) p.cpuLink = "Infinity Fabric";
-    p.description ||= `${p.nodeRange} · ${p.cores} physical cores · ${p.memory} RAM${p.gpu ? ` · ${p.gpuCount} × ${p.gpu}` : ""}.`;
     const gpu = hardware.gpus[p.gpu];
+    p.description ||= (p.group === "ICER · GPU" && gpu?.summary) || `${p.nodeRange} · ${p.cores} physical cores · ${p.memory} RAM${p.gpu ? ` · ${p.gpuCount} × ${p.gpu}` : ""}.`;
     p.interconnect ||= p.gpu ? "PCIe" : undefined;
     p.goodFor ||= gpu?.goodFor || "Parallel CPU simulations, numerical analysis, preprocessing, and independent batch jobs that fit the node’s memory.";
     p.limitations ||= gpu?.limitations || "GPU-only workloads and expecting serial code to use every CPU core. Request enough RAM for the working set; extra capacity alone does not guarantee more speed.";
@@ -68,6 +68,8 @@ export function prepareProfiles(rawProfiles, hardware) {
     }
     if (p.nvlink) {
       p.components["gpu-interconnect"] = { title: "GPU-to-GPU connection", goodFor: p.nvlink === "Yes" ? "Exchanging data in explicitly parallel multi-GPU workloads using NVLink." : "Independent GPU tasks and communication that fits the available PCIe topology.", limitations: "Does not automatically combine GPU memory. Actual links, routing, peer access, and partitioning must be checked on the allocated node." };
+      if (p.gpu === "L40S") p.components["gpu-interconnect"] = { title: "PCIe · no GPU-to-GPU NVLink", goodFor: "Independent jobs, or explicitly parallel jobs whose communication fits PCIe. Cooperation is possible; the cards are not disconnected.", limitations: "No dedicated NVLink network. Direct PCIe peer access versus staging through CPU-side RAM depends on the allocated system; ICER’s public inventory does not specify those paths." };
+      if (p.gpu === "H200" && p.nvlink === "Yes") p.components["gpu-interconnect"] = { title: "NVLink · coordinated GPU work", goodFor: "Fast GPU-to-GPU exchange for software that distributes one large job across multiple H200 GPUs.", limitations: "The GPUs remain separate devices with separate memory. Software must distribute work explicitly. ICER confirms NVLink, but its public inventory does not establish exact switch or link wiring." };
     }
     if (p.sourceKey === "development") {
       p.goodFor = "Compiling, debugging, and short CPU or GPU tests before submitting scheduled compute jobs.";
