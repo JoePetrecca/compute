@@ -54,7 +54,7 @@ Run `node --test tests/*.test.mjs` to validate profile coverage, node ranges, ph
 
 ## HPCC overview
 
-The **HPCC → The HPCC** sidebar entry assembles the represented ICER inventory into **one massive, continuous SVG map**, with one miniature for each physical node. It reuses each configuration's Simple diagram through SVG symbols, so an eight-node configuration shows eight copies and a twenty-node configuration shows twenty. Category and configuration labels are part of the image—not separate gallery cards.
+The **HPCC → The HPCC** sidebar entry assembles the represented ICER inventory into **one continuous SVG map**, with tightly packed, faintly colored islands for hardware families such as Milan and Rome. Large centered family names appear over faint node diagrams in the overview; zooming in fades those names out and brings configuration labels and individual nodes into full visibility. Both configurations and islands are packed to fill gaps, with map bounds fitted to the content. It reuses each configuration's Simple diagram through SVG symbols, so an eight-node configuration shows eight copies and a twenty-node configuration shows twenty. Labels are part of the image—not separate gallery cards.
 
 Drag to pan, scroll or pinch to zoom, or use the zoom, Fit all, 100%, and Fullscreen controls. Keyboard controls are `+` / `-` for zoom, arrow keys for pan, and `0` or Home to fit everything. Hover a node for its name; individual configuration pages remain available in the sidebar. The map starts fitted to show the entire cluster and keeps diagrams sharp as you zoom.
 

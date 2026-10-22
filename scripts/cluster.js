@@ -12,35 +12,77 @@ export function clusterInventory(profiles) {
   };
 }
 
-// One world-space drawing; shelves pack configurations without replacing any nodes.
+// Bottom-left packing lets short blocks fill gaps beside taller neighbors.
+function packBlocks(blocks, limit, gap) {
+  const placed = [];
+  for (const block of [...blocks].sort((a, b) => b.height - a.height || b.width - a.width)) {
+    const xs = [0, ...placed.map(p => p.x + p.width + gap)];
+    const ys = [0, ...placed.map(p => p.y + p.height + gap)];
+    let best;
+    for (const y of ys) for (const x of xs) {
+      if (x + block.width > limit) continue;
+      if (placed.some(p => x < p.x + p.width + gap && x + block.width + gap > p.x && y < p.y + p.height + gap && y + block.height + gap > p.y)) continue;
+      if (!best || y < best.y || y === best.y && x < best.x) best = { x, y };
+    }
+    placed.push({ ...block, ...best });
+  }
+  return { blocks: placed, width: Math.max(0, ...placed.map(p => p.x + p.width)), height: Math.max(0, ...placed.map(p => p.y + p.height)) };
+}
+
+function compactBlocks(blocks, gap, aspect) {
+  if (!blocks.length) return { blocks: [], width: 0, height: 0 };
+  const minimum = Math.max(...blocks.map(b => b.width));
+  const maximum = blocks.reduce((sum, b) => sum + b.width + gap, 0);
+  let best, bestScore = Infinity;
+  for (let step = 0; step <= 24; step++) {
+    const layout = packBlocks(blocks, minimum + (maximum - minimum) * step / 24, gap);
+    const score = layout.width * layout.height * (1 + 0.3 * Math.abs(Math.log(layout.width / layout.height / aspect)));
+    if (score < bestScore) { best = layout; bestScore = score; }
+  }
+  return best;
+}
+
+// Pack both configurations and family islands; bounds follow the actual content.
 export function clusterLayout(inventory) {
-  const width = 7600, margin = 36, gap = 24, tileWidth = 148, tileHeight = 104;
+  const margin = 6, gap = 8, tileWidth = 138, tileHeight = 90;
   const order = ["ICER · CPU", "ICER · GPU", "ICER · Data Machine", "ICER · Superchips", "ICER · Development"];
-  let y = margin;
-  const groups = [...inventory.groups].sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name)).map(group => {
-    const top = y;
-    let x = margin * 2, shelfY = top + 88, shelfHeight = 0;
-    const configurations = group.profiles.map(profile => {
-      const columns = Math.min(24, Math.max(3, Math.ceil(Math.sqrt(profile.nodes.length) * 1.6)));
-      const blockWidth = columns * tileWidth + 24;
-      const blockHeight = Math.ceil(profile.nodes.length / columns) * tileHeight + 88;
-      if (x + blockWidth > width - margin * 2) {
-        x = margin * 2;
-        shelfY += shelfHeight + gap;
-        shelfHeight = 0;
+  const families = [];
+  for (const category of [...inventory.groups].sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name))) {
+    for (const profile of category.profiles) {
+      const label = category.name === "ICER · Development" ? "Development" : profile.label.split(" · ")[0];
+      let family = families.find(group => group.name === category.name && group.label === label);
+      if (!family) { family = { name: category.name, label, profiles: [] }; families.push(family); }
+      family.profiles.push(profile);
+    }
+  }
+  const islands = families.map(group => {
+    const blocks = group.profiles.map(profile => {
+      const count = profile.nodes.length;
+      const ideal = Math.sqrt(count * 1.2);
+      let columns = 1, score = Infinity;
+      for (let candidate = 1; candidate <= Math.min(count, 20); candidate++) {
+        const waste = candidate * Math.ceil(count / candidate) / count;
+        const value = waste + 0.2 * Math.abs(Math.log(candidate / ideal));
+        if (value < score) { columns = candidate; score = value; }
       }
-      const block = { profile, x, y: shelfY, width: blockWidth, height: blockHeight,
-        nodes: profile.nodes.map((name, index) => ({ name, x: x + 12 + index % columns * tileWidth, y: shelfY + 70 + Math.floor(index / columns) * tileHeight, width: tileWidth - 8, height: tileHeight - 8 })) };
-      x += blockWidth + gap;
-      shelfHeight = Math.max(shelfHeight, blockHeight);
-      return block;
+      return { profile, columns, width: columns * tileWidth + 4, height: Math.ceil(count / columns) * tileHeight + 38 };
     });
-    y = shelfY + shelfHeight + margin;
-    const result = { name: group.name, x: margin, y: top, width: width - margin * 2, height: y - top, configurations };
-    y += gap;
-    return result;
+    const packed = compactBlocks(blocks, 6, 1.5);
+    return { name: group.name, label: group.label, configurations: packed.blocks, width: packed.width + 12, height: packed.height + 34 };
   });
-  return { width, height: y + margin, groups };
+  const packed = compactBlocks(islands, gap, 1.8);
+  const groups = packed.blocks.map(group => {
+    const x = group.x + margin, y = group.y + margin;
+    const configurations = group.configurations.map(block => {
+      const bx = x + 6 + block.x, by = y + 28 + block.y;
+      return { ...block, x: bx, y: by, nodes: block.profile.nodes.map((name, index) => ({
+        name, x: bx + 2 + index % block.columns * tileWidth, y: by + 36 + Math.floor(index / block.columns) * tileHeight,
+        width: tileWidth - 2, height: tileHeight - 2
+      })) };
+    });
+    return { ...group, x, y, configurations };
+  });
+  return { width: packed.width + margin * 2, height: packed.height + margin * 2, groups };
 }
 
 export function fitCluster(width, height, worldWidth, worldHeight) {

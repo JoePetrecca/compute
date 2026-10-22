@@ -17,6 +17,7 @@ test("map supports zoom, pan, pinch, keyboard, fullscreen and listener cleanup",
   document.exitFullscreen = async () => { document.fullscreenElement = null; document.events.get("fullscreenchange")(); };
   const dispose = mountClusterMap({ root, viewport, world, readout, width: 5200, height: 4000 });
   const initial = world.attributes.transform;
+  assert.ok(world.attributes.style.includes("--map-nodes: 0.18"), "nodes stay faintly visible in the overview");
   const click = action => root.events.get("click")({ target: { closest: () => ({ dataset: { mapAction: action } }) } });
   await click("in");
   assert.notEqual(world.attributes.transform, initial);
@@ -24,6 +25,7 @@ test("map supports zoom, pan, pinch, keyboard, fullscreen and listener cleanup",
   assert.equal(world.attributes.transform, initial);
   await click("actual");
   assert.equal(readout.textContent, "100%");
+  assert.ok(world.attributes.style.includes("--map-nodes: 1;"), "nodes become fully visible when zoomed in");
   let prevented = false;
   viewport.events.get("wheel")({ deltaY: -100, deltaMode: 0, clientX: 250, clientY: 200, preventDefault() { prevented = true; } });
   assert.ok(prevented);

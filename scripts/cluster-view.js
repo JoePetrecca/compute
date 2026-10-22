@@ -14,6 +14,8 @@ export function mountClusterMap({ root, viewport, world, readout, width, height 
   };
   const paint = () => {
     world.setAttribute("transform", `translate(${transform.x} ${transform.y}) scale(${transform.scale})`);
+    const detail = Math.max(0, Math.min(1, (transform.scale - 0.18) / 0.24));
+    world.setAttribute("style", `--map-detail: ${detail}; --map-nodes: ${0.18 + 0.82 * detail}; --map-overview: ${1 - detail}`);
     readout.textContent = `${Math.round(transform.scale * 100)}%`;
   };
   const fit = () => {

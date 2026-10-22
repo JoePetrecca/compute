@@ -99,40 +99,42 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .diagram { width: 100%; margin: 14px auto; max-width: 1100px; }
 .diagram svg { display: block; width: 100%; height: auto; overflow: hidden; }
 .topology-note { margin: 8px 16px; color: #656570; font-size: 12px; line-height: 1.5; text-align: center; }
-.cluster-panel { margin: 28px 0; }
-.cluster-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.cluster-stats > div { padding: 20px; border: 1px solid #dce5ef; border-radius: 14px; background: linear-gradient(140deg, #eff5fd, #fafcff); }
-.cluster-stats strong { display: block; color: #355d8c; font-size: 28px; font-weight: 550; letter-spacing: -.8px; }
-.cluster-stats span { color: #6b7c91; font-size: 11px; }
-.cluster-note { margin: 18px 0 8px; color: #747e8b; font-size: 12px; line-height: 1.7; }
-.cluster-map { margin-top: 22px; overflow: hidden; border: 1px solid #293a51; border-radius: 18px; background: #111c2d; box-shadow: 0 12px 32px #192f4c16; }
-.cluster-map-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-bottom: 1px solid #2c3d54; color: #e1eaf6; background: #1a293e; }
-.cluster-map-toolbar strong { display: block; font-size: 15px; font-weight: 550; }
-.cluster-map-toolbar > div > span { display: block; margin-top: 4px; color: #a1b3cb; font-size: 11px; }
+.cluster-panel { width: 100%; max-width: 1100px; margin: 14px auto; }
+.cluster-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.cluster-stats > div { min-width: 0; }
+.cluster-stats dt { color: var(--muted); font-size: 11px; }
+.cluster-stats dd { margin: 4px 0 0; color: var(--ink); font-size: 14px; font-weight: 550; }
+.cluster-note { margin: 18px 0 8px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.cluster-map { overflow: hidden; background: #fff; }
+.cluster-map-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 2px 0 6px; color: #86868e; background: #fff; font-size: 11px; }
 .cluster-map-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.cluster-map-controls button { min-height: 44px; min-width: 44px; padding: 10px 14px; border: 1px solid #405571; border-radius: 8px; background: #25374f; color: #dfebfa; font-size: 12px; }
-.cluster-map-controls button:hover { background: #365171; border-color: #7393bb; }
-.cluster-map-controls output { min-width: 44px; text-align: center; color: #c4d5eb; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
-.cluster-viewport { height: clamp(480px, 74vh, 960px); min-height: 0; overflow: hidden; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; background: radial-gradient(#30435b 1px, transparent 1px) 0 0 / 24px 24px, #101b2c; }
+.cluster-map-controls button { min-height: 44px; min-width: 44px; padding: 10px 14px; border: 1px solid #dddfe4; border-radius: 9px; background: #fafafa; color: #6c6c75; font-size: 12px; }
+.cluster-map-controls button:hover { background: #f1f3f7; }
+.cluster-map-controls output { min-width: 44px; text-align: center; color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.cluster-viewport { height: clamp(360px, 60vh, 720px); min-height: 0; overflow: hidden; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; background: #fff; }
 .cluster-viewport.is-panning { cursor: grabbing; }
 .cluster-viewport:focus-visible { outline: 3px solid #85b5f1; outline-offset: -3px; }
 .cluster-canvas { display: block; overflow: hidden; }
 .cluster-canvas .part { cursor: inherit; pointer-events: none; }
-.map-section { --map-accent: #88b7f0; }
-.map-section[data-map-group="ICER · GPU"] { --map-accent: #c6a4f3; }
-.map-section[data-map-group="ICER · Data Machine"] { --map-accent: #e4b57a; }
-.map-section[data-map-group="ICER · Superchips"] { --map-accent: #e4ce85; }
-.map-section[data-map-group="ICER · Development"] { --map-accent: #e8aaaa; }
-.map-section-frame { fill: #15243a; stroke: #3c5270; stroke-width: 2; }
-.map-section-title { fill: var(--map-accent); font-size: 32px; font-weight: 600; }
-.map-configuration-frame { fill: #1c2d44; stroke: #344a65; stroke-width: 1.5; }
-.map-configuration-title { fill: #d2e0f2; font-size: 18px; font-weight: 550; }
-.map-configuration-count { fill: #9cb2ce; font-size: 13px; }
-.map-node-paper { fill: #f4f8fe; }
-.map-node-name { fill: #abc0d9; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.map-section { --map-accent: #527aa8; --map-island: #f4f8fd; }
+.map-section[data-map-group="ICER · GPU"] { --map-accent: #8864ac; --map-island: #f9f6fd; }
+.map-section[data-map-group="ICER · Data Machine"] { --map-accent: #aa713e; --map-island: #fdf8f2; }
+.map-section[data-map-group="ICER · Superchips"] { --map-accent: #967127; --map-island: #fdfbf2; }
+.map-section[data-map-group="ICER · Development"] { --map-accent: #a76565; --map-island: #fdf6f6; }
+.map-section-frame { fill: var(--map-island); stroke: none; }
+.map-section-title { fill: var(--map-accent); font-size: 22px; font-weight: 600; opacity: var(--map-detail, 0); }
+.map-configuration-title, .map-configuration-count { opacity: var(--map-detail, 0); }
+.map-node { opacity: var(--map-nodes, .18); }
+.map-island-label { fill: var(--map-accent); font-weight: 550; opacity: var(--map-overview, 1); pointer-events: none; }
+.map-island-label text { stroke: var(--map-island); stroke-width: 6px; paint-order: stroke; stroke-linejoin: round; }
+.map-island-subtitle { font-weight: 400; }
+.map-configuration-title { fill: var(--ink); font-size: 18px; font-weight: 550; }
+.map-configuration-count { fill: var(--muted); font-size: 13px; }
+.map-node-paper { fill: #fff; }
+.map-node-name { fill: #656570; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
 .map-node:hover .map-node-paper { stroke: var(--map-accent); stroke-width: 3; }
-.cluster-map-status { margin: 0; padding: 12px 18px; color: #a4b7d0; border-top: 1px solid #2c3d54; font-size: 11px; }
-.cluster-map:fullscreen { display: flex; flex-direction: column; width: 100vw; height: 100dvh; border: 0; border-radius: 0; margin: 0; }
+.cluster-map-status { margin: 0; padding: 12px 0; color: var(--muted); font-size: 11px; }
+.cluster-map:fullscreen { display: flex; flex-direction: column; width: 100vw; height: 100dvh; border: 0; border-radius: 0; margin: 0; padding: 16px; }
 .cluster-map:fullscreen .cluster-viewport { flex: 1; height: auto; }
 [data-group="HPCC"] .profile-icon { color: #4f8096; background: #dfedf2; }
 [data-group="HPCC"] .computer[aria-current=true] { color: #276277; background: #dceef3; }
@@ -288,7 +290,7 @@ dialog h2 { font-size: 27px; font-weight: 550; letter-spacing: -.7px; margin: 0 
 .loading { color: #7e7e88; font-size: 12px; padding: 20px 10px; }
 @media (min-width: 1700px) {
   main { padding: 35px 65px 25px; }
-  .diagram { max-width: 1250px; }
+  .diagram, .cluster-panel { max-width: 1250px; }
   .computer strong { font-size: 13px; }
   .computer small { font-size: 11px; }
 }
@@ -305,10 +307,9 @@ dialog h2 { font-size: 27px; font-weight: 550; letter-spacing: -.7px; margin: 0 
   .controls label { font-size: 11px; }
 }
 @media (max-width: 700px) {
-  .cluster-map-toolbar { align-items: flex-start; flex-direction: column; padding: 12px; }
+  .cluster-map-toolbar { align-items: flex-start; flex-direction: column; }
   .cluster-map-controls { gap: 4px; }
   .cluster-map-controls button { padding: 9px 10px; }
-  .cluster-stats > div { padding: 14px; }
   .resource-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .machine-tabs { padding: 0; }
   .machine-tabs button { padding: 14px 10px; font-size: 12px; }
@@ -334,7 +335,7 @@ dialog h2 { font-size: 27px; font-weight: 550; letter-spacing: -.7px; margin: 0 
   .page-header { gap: 10px; }
   .page-header h1 { font-size: 27px; }
   .summary { font-size: 11px; }
-  .diagram { margin: 20px 0; }
+  .diagram, .cluster-panel { margin: 20px 0; }
   .part .label { font-size: 32px; }
   .part .sub { font-size: 21px; }
   .main-footer { flex-wrap: wrap; font-size: 9px; gap: 8px; }

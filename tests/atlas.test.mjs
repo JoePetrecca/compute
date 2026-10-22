@@ -284,6 +284,12 @@ test("every view and clickable component renders usable information", async () =
   assert.equal(elements.get("#diagram").innerHTML, "");
   for (const selector of ["#machine-tabs", "#inspector", "#usage-panel", "#details-button", "#diagram-view-controls"]) assert.equal(elements.get(selector).hidden, true, selector);
   const overview = elements.get("#cluster-panel").innerHTML;
+  assert.ok(overview.indexOf('id="cluster-viewport"') < overview.indexOf('class="cluster-stats"'));
+  assert.ok(overview.includes('<dl class="cluster-stats" aria-label="Cluster inventory totals">'));
+  assert.ok(!overview.includes("nodes. One view."));
+  assert.ok(overview.includes('data-map-family="Milan"'));
+  assert.ok(overview.includes('data-map-family="Rome"'));
+  assert.ok(overview.includes('class="map-island-label"'));
   assert.equal((overview.match(/class="map-node"/g) || []).length, 645);
   assert.equal((overview.match(/<svg /g) || []).length, 1);
   assert.equal((overview.match(/<symbol /g) || []).length, 36);
@@ -295,7 +301,7 @@ test("every view and clickable component renders usable information", async () =
   assert.equal((overview.match(/href="#cluster-rome-493"/g) || []).length, 207);
   for (const action of ["in", "out", "fit", "actual", "fullscreen"]) assert.ok(overview.includes(`data-map-action="${action}"`));
   assert.equal(mapMounts.length, 1);
-  assert.equal(mapMounts[0].width, 7600);
+  assert.ok(mapMounts[0].width > 0 && mapMounts[0].width < 7600);
   for (const p of profiles.filter(p => p.group.startsWith("ICER"))) {
     const drawing = vm.runInContext(`diagramContent(state.profiles.find(p => p.id === '${p.id}'), 'simple').drawing`, context).replace(/\s(?:data-part|tabindex|role|aria-label)="[^"]*"/g, "");
     assert.ok(overview.includes(drawing), `${p.id}: uses the existing diagram`);

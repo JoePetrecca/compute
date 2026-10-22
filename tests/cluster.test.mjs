@@ -28,7 +28,18 @@ test("one world-space map places every node without overlapping configurations",
   const layout = clusterLayout(clusterInventory(profiles));
   const boxes = layout.groups.flatMap(g => g.configurations);
   assert.equal(boxes.flatMap(b => b.nodes).length, 645);
-  assert.equal(layout.width, 7600);
+  assert.ok(layout.width > 0 && layout.width < 7600);
+  const islandArea = layout.groups.reduce((sum, group) => sum + group.width * group.height, 0);
+  assert.ok(islandArea / (layout.width * layout.height) > 0.8, "islands fill at least 80% of map bounds");
+  for (const label of ["Milan", "Rome"]) {
+    const islands = layout.groups.filter(group => group.label === label && group.name === "ICER · CPU");
+    assert.equal(islands.length, 1);
+    assert.equal(islands[0].configurations.length, 3);
+  }
+  for (let i = 0; i < layout.groups.length; i++) for (let j = i + 1; j < layout.groups.length; j++) {
+    const a = layout.groups[i], b = layout.groups[j];
+    assert.ok(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
+  }
   for (const group of layout.groups) {
     assert.ok(group.y + group.height <= layout.height);
     for (const box of group.configurations) {
