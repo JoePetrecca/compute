@@ -55,3 +55,34 @@ test("map supports zoom, pan, pinch, keyboard, fullscreen and listener cleanup",
   assert.equal(root.events.size, 0);
   assert.equal(document.events.size, 0);
 });
+
+test("selecting a node opens its configuration but dragging or pinching does not", () => {
+  const element = () => ({
+    events: new Map(), classList: { add() {}, remove() {} },
+    addEventListener(type, callback) { this.events.set(type, callback); },
+    removeEventListener(type) { this.events.delete(type); },
+    setAttribute() {}, focus() {}, setPointerCapture() {},
+    getBoundingClientRect() { return { left: 0, top: 0, width: 1000, height: 600 }; }
+  });
+  const root = element(), viewport = element(), world = element(), document = element();
+  root.ownerDocument = document;
+  root.querySelector = () => null;
+  const selected = [];
+  const dispose = mountClusterMap({ root, viewport, world, readout: {}, width: 5200, height: 4000, onSelectNode: (...args) => selected.push(args) });
+  const configuration = { dataset: { configuration: "acm" } };
+  const node = { dataset: { node: "acm-000" }, closest: () => configuration };
+  const target = { closest: () => node };
+  const pointer = (type, id, x, y) => viewport.events.get(type)({ type, target, pointerId: id, button: 0, clientX: x, clientY: y });
+  pointer("pointerdown", 1, 100, 100);
+  pointer("pointerup", 1, 100, 100);
+  assert.deepEqual(selected, [["acm", "acm-000"]]);
+  pointer("pointerdown", 1, 100, 100);
+  pointer("pointermove", 1, 120, 100);
+  pointer("pointerup", 1, 120, 100);
+  pointer("pointerdown", 1, 100, 100);
+  pointer("pointerdown", 2, 200, 100);
+  pointer("pointerup", 1, 100, 100);
+  pointer("pointerup", 2, 200, 100);
+  assert.equal(selected.length, 1);
+  dispose();
+});

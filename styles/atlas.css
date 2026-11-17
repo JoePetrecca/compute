@@ -100,7 +100,7 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .diagram svg { display: block; width: 100%; height: auto; overflow: hidden; }
 .topology-note { margin: 8px 16px; color: #656570; font-size: 12px; line-height: 1.5; text-align: center; }
 .cluster-panel { width: 100%; max-width: 1100px; margin: 14px auto; }
-.cluster-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.cluster-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
 .cluster-stats > div { min-width: 0; }
 .cluster-stats dt { color: var(--muted); font-size: 11px; }
 .cluster-stats dd { margin: 4px 0 0; color: var(--ink); font-size: 14px; font-weight: 550; }
@@ -124,7 +124,7 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .map-section-frame { fill: var(--map-island); stroke: none; }
 .map-section-title { fill: var(--map-accent); font-size: 22px; font-weight: 600; opacity: var(--map-detail, 0); }
 .map-configuration-title, .map-configuration-count { opacity: var(--map-detail, 0); }
-.map-node { opacity: var(--map-nodes, .18); }
+.map-node { opacity: var(--map-nodes, .18); cursor: pointer; }
 .map-island-label { fill: var(--map-accent); font-weight: 550; opacity: var(--map-overview, 1); pointer-events: none; }
 .map-island-label text { stroke: var(--map-island); stroke-width: 6px; paint-order: stroke; stroke-linejoin: round; }
 .map-island-subtitle { font-weight: 400; }
@@ -132,6 +132,8 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .map-configuration-count { fill: var(--muted); font-size: 13px; }
 .map-node-paper { fill: #fff; }
 .map-node-name { fill: #656570; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.map-buyin-marker { fill: #8a5000; opacity: .3; stroke: #fff; stroke-width: 3px; paint-order: stroke; font: 12px sans-serif; }
+.map-buyin-legend { color: #8a5000; opacity: .3; font-size: 12px; }
 .map-node:hover .map-node-paper { stroke: var(--map-accent); stroke-width: 3; }
 .cluster-map-status { margin: 0; padding: 12px 0; color: var(--muted); font-size: 11px; }
 .cluster-map:fullscreen { display: flex; flex-direction: column; width: 100vw; height: 100dvh; border: 0; border-radius: 0; margin: 0; padding: 16px; }
@@ -273,6 +275,11 @@ main { min-width: 0; min-height: 100dvh; padding: 28px 38px 20px; }
 .main-footer { display: flex; justify-content: space-between; gap: 20px; color: #a0a0a8; font-size: 10px; margin-top: 8px; }
 .main-footer i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin: 0 4px 0 10px; }
 .main-footer i:first-child { margin-left: 0; }
+.main-footer .island-cpu { background: #f4f8fd; border: 1px solid #527aa8; }
+.main-footer .island-gpu { background: #f9f6fd; border: 1px solid #8864ac; }
+.main-footer .island-data { background: #fdf8f2; border: 1px solid #aa713e; }
+.main-footer .island-superchips { background: #fdfbf2; border: 1px solid #967127; }
+.main-footer .island-development { background: #fdf6f6; border: 1px solid #a76565; }
 .cpu { background: var(--cpu); }
 .gpu { background: var(--gpu); }
 .memory { background: var(--memory); }

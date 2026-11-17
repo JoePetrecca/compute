@@ -1,4 +1,8 @@
-export function clusterInventory(profiles) {
+export function parseBuyInNodes(text) {
+  return new Set(text.split(/\r?\n/).map(line => line.trim().split(/\s+/)).filter(([, category]) => category === "buyin").map(([name]) => name));
+}
+
+export function clusterInventory(profiles, hardware = {}) {
   const configurations = profiles.filter(p => p.group?.startsWith("ICER"));
   const compute = configurations.filter(p => p.sourceKey !== "development");
   const development = configurations.filter(p => p.sourceKey === "development");
@@ -7,8 +11,14 @@ export function clusterInventory(profiles) {
     configurations,
     groups: [...new Set(configurations.map(p => p.group))].map(name => ({ name, profiles: configurations.filter(p => p.group === name) })),
     totalNodes: count(configurations), computeNodes: count(compute), developmentNodes: count(development),
+    physicalCpus: compute.reduce((total, p) => total + (p.sockets || (p.cpu === "NVIDIA Grace" ? p.cores / 72 : p.cores / hardware.cpus?.[p.cpu]?.coresPerSocket) || 0) * p.nodes.length, 0),
     physicalCores: compute.reduce((total, p) => total + p.cores * p.nodes.length, 0),
-    physicalGpus: compute.reduce((total, p) => total + (p.gpuCount || 0) * p.nodes.length, 0)
+    physicalGpus: compute.reduce((total, p) => total + (p.gpuCount || 0) * p.nodes.length, 0),
+    gpuCores: compute.reduce((total, p) => total + (p.gpuCount || 0) * (hardware.gpuCudaCores?.[p.gpu] || 0) * p.nodes.length, 0),
+    memoryGb: compute.reduce((total, p) => {
+      const match = p.memory?.match(/^([\d.]+)\s*(GB|TB)$/i);
+      return total + (match ? Number(match[1]) * (match[2].toUpperCase() === "TB" ? 1000 : 1) : 0) * p.nodes.length;
+    }, 0)
   };
 }
 

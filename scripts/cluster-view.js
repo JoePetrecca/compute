@@ -1,12 +1,13 @@
 import { fitCluster, zoomCluster } from "./cluster.js";
 
-export function mountClusterMap({ root, viewport, world, readout, width, height }) {
+export function mountClusterMap({ root, viewport, world, readout, width, height, onSelectNode }) {
   const document = root.ownerDocument;
   const pointers = new Map();
   const cleanup = [];
   let transform = { x: 0, y: 0, scale: 1 };
   let autoFit = true;
   let lastSize = { width: 0, height: 0 };
+  let selection = null;
   const size = () => viewport.getBoundingClientRect();
   const listen = (element, type, callback, options) => {
     element.addEventListener(type, callback, options);
@@ -55,6 +56,10 @@ export function mountClusterMap({ root, viewport, world, readout, width, height 
   listen(viewport, "pointerdown", event => {
     if (event.button !== 0) return;
     viewport.focus({ preventScroll: true });
+    const node = event.target?.closest?.(".map-node");
+    const configuration = node?.closest("[data-configuration]");
+    if (pointers.size) selection = null;
+    else selection = node && configuration ? { pointerId: event.pointerId, point: local(event), node: node.dataset.node, configuration: configuration.dataset.configuration } : null;
     pointers.set(event.pointerId, local(event));
     viewport.setPointerCapture(event.pointerId);
     viewport.classList.add("is-panning");
@@ -64,6 +69,7 @@ export function mountClusterMap({ root, viewport, world, readout, width, height 
     const before = [...pointers.values()];
     const old = pointers.get(event.pointerId);
     const point = local(event);
+    if (selection && Math.hypot(point.x - selection.point.x, point.y - selection.point.y) > 5) selection = null;
     pointers.set(event.pointerId, point);
     if (pointers.size === 1) {
       transform.x += point.x - old.x;
@@ -81,8 +87,11 @@ export function mountClusterMap({ root, viewport, world, readout, width, height 
     paint();
   });
   const endPointer = event => {
+    const selected = event.type === "pointerup" && selection?.pointerId === event.pointerId ? selection : null;
+    if (selection?.pointerId === event.pointerId) selection = null;
     pointers.delete(event.pointerId);
     if (!pointers.size) viewport.classList.remove("is-panning");
+    if (selected) onSelectNode?.(selected.configuration, selected.node);
   };
   for (const event of ["pointerup", "pointercancel", "lostpointercapture"]) listen(viewport, event, endPointer);
   listen(viewport, "keydown", event => {

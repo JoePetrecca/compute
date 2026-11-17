@@ -2,14 +2,24 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { prepareProfiles } from "../scripts/profiles.js";
-import { clusterInventory, clusterLayout, fitCluster, zoomCluster } from "../scripts/cluster.js";
+import { clusterInventory, clusterLayout, fitCluster, zoomCluster, parseBuyInNodes } from "../scripts/cluster.js";
 
 const json = async path => JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), "utf8"));
 const ids = await json("data/computers.json");
-const profiles = prepareProfiles(await Promise.all(ids.map(id => json(`data/computers/${id}.json`))), await json("data/hardware.json"));
+const hardware = await json("data/hardware.json");
+const profiles = prepareProfiles(await Promise.all(ids.map(id => json(`data/computers/${id}.json`))), hardware);
+
+test("buy-in classifications match nodes.txt and exclude general nodes", async () => {
+  const text = await readFile(new URL("../nodes.txt", import.meta.url), "utf8");
+  const buyIn = parseBuyInNodes(text);
+  assert.ok(buyIn.has("acm-000"));
+  assert.ok(!buyIn.has("acm-018"));
+  assert.ok(clusterInventory(profiles).configurations.flatMap(p => p.nodes).some(name => buyIn.has(name)));
+  assert.deepEqual([...parseBuyInNodes(" one buyin\r\ntwo general\nthree buyin\n")], ["one", "three"]);
+});
 
 test("HPCC inventory counts each represented physical node once and excludes Moria", () => {
-  const inventory = clusterInventory(profiles);
+  const inventory = clusterInventory(profiles, hardware);
   const nodes = inventory.configurations.flatMap(p => p.nodes);
   assert.equal(inventory.configurations.length, 36);
   assert.equal(nodes.length, new Set(nodes).size);
@@ -18,10 +28,25 @@ test("HPCC inventory counts each represented physical node once and excludes Mor
   assert.equal(inventory.developmentNodes, 5);
   assert.equal(inventory.physicalCores, 69936);
   assert.equal(inventory.physicalGpus, 284);
+  assert.ok(inventory.physicalCpus > 0);
+  assert.ok(inventory.gpuCores > 0);
+  assert.ok(inventory.memoryGb > 0);
   assert.ok(!inventory.configurations.some(p => p.id === "moria"));
   assert.equal(inventory.groups.flatMap(g => g.profiles).length, inventory.configurations.length);
   assert.equal(inventory.configurations.find(p => p.id === "v100").nodes.length, 8);
   assert.equal(inventory.configurations.find(p => p.id === "v100s").nodes.length, 20);
+});
+
+test("resource totals use physical devices and exclude development nodes", () => {
+  const inventory = clusterInventory([
+    { group: "ICER · GPU", cpu: "Test CPU", cores: 64, memory: "1.5 TB", gpu: "A100", gpuCount: 4, nodes: ["a", "b"] },
+    { group: "ICER · Development", sourceKey: "development", cores: 10, memory: "100 GB", nodes: ["dev"] }
+  ], { cpus: { "Test CPU": { coresPerSocket: 32 } }, gpuCudaCores: { A100: 6912 } });
+  assert.equal(inventory.physicalCpus, 4);
+  assert.equal(inventory.physicalCores, 128);
+  assert.equal(inventory.physicalGpus, 8);
+  assert.equal(inventory.gpuCores, 55296);
+  assert.equal(inventory.memoryGb, 3000);
 });
 
 test("one world-space map places every node without overlapping configurations", () => {

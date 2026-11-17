@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ICER Job Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1210; --panel:#161b18; --panel-2:#1c2320; --line:#2a332e;
+    --text:#d8e0da; --dim:#7c8c82; --amber:#e0a63a; --green:#7fd858;
+    --green-dim:#4d7a3a; --blue:#7ab8e8; --purple:#b89ae0;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;padding:30px 20px 80px;}
+  .wrap{max-width:1180px;margin:0 auto;}
+  header{margin-bottom:22px;border-bottom:1px solid var(--line);padding-bottom:16px;}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin:0 0 6px;}
+  h1{margin:0 0 4px;font-size:24px;font-weight:600;color:#fff;}
+  .sub{color:var(--dim);font-size:13px;max-width:720px;}
+  .sub a{color:var(--green-dim);}
+
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:22px;align-items:start;}
+  @media (max-width:920px){.grid{grid-template-columns:1fr;}}
+
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px;position:relative;}
+  .step h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:0 0 12px;display:flex;align-items:center;gap:9px;}
+  .step h2 .n{font-family:var(--mono);color:var(--green);background:#132018;border:1px solid var(--green-dim);border-radius:5px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none;}
+  .step h2 .picked{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--green);text-transform:none;letter-spacing:0;font-weight:400;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:16px;padding:6px 14px;font-size:12.5px;font-family:var(--mono);cursor:pointer;transition:.12s;}
+  .chip:hover{border-color:var(--green-dim);}
+  .chip.on{border-color:var(--green);background:#152018;color:var(--green);}
+  .chip.arm{border-style:dashed;}
+  .chip.arm.on{border-color:var(--purple);color:var(--purple);background:#1a1522;}
+
+  details{margin-top:10px;}
+  details summary{font-family:var(--mono);font-size:11.5px;color:var(--dim);cursor:pointer;list-style:none;}
+  details summary::before{content:'▸ ';color:var(--green-dim);}
+  details[open] summary::before{content:'▾ ';}
+  details summary:hover{color:var(--green);}
+  .full{margin-top:10px;}
+
+  .mini{display:flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--dim);}
+  .mini input{width:90px;background:#0d100e;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12.5px;}
+  .mini input:focus{outline:none;border-color:var(--green);}
+
+  /* hardware match rows */
+  .hw{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:10px 13px;margin-bottom:7px;cursor:pointer;transition:.12s;}
+  .hw:hover{border-color:var(--green-dim);}
+  .hw.on{border-color:var(--green);background:#152018;}
+  .hw-name{font-family:var(--mono);font-size:12.5px;font-weight:600;color:#fff;}
+  .hw.on .hw-name{color:var(--green);}
+  .hw-spec{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:2px;}
+  .hw-spec .gpu{color:var(--blue);} .hw-spec .arm{color:var(--purple);} .hw-spec .warn{color:var(--amber);}
+  .nofit-msg{font-family:var(--mono);font-size:12px;color:var(--amber);}
+
+  /* extras */
+  label{display:block;font-size:11.5px;color:var(--dim);margin-bottom:4px;font-family:var(--mono);}
+  .field-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+  .field{flex:1 1 140px;}
+  input[type=text],select{width:100%;background:#0d100e;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12.5px;}
+  input:focus,select:focus{outline:none;border-color:var(--green);}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:8px;cursor:pointer;}
+  .checkline input{accent-color:var(--green);width:14px;height:14px;}
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:12px;}
+  .seg button{flex:1;background:var(--panel-2);color:var(--dim);border:none;padding:8px;font-family:var(--mono);font-size:11.5px;cursor:pointer;}
+  .seg button.on{background:#152018;color:var(--green);}
+
+  /* right */
+  .sticky{position:sticky;top:16px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:0 0 10px;}
+  .cmdbox{background:#0a0d0b;border:1px solid var(--green-dim);border-radius:8px;padding:13px 15px;font-family:var(--mono);font-size:12.5px;color:var(--green);white-space:pre-wrap;word-break:break-all;min-height:52px;line-height:1.65;}
+  .cmdbox .flag{color:#9fd8ff;}
+  button.copy{width:100%;background:var(--green);color:#0a0d0b;border:none;border-radius:6px;padding:10px;font-family:var(--mono);font-weight:600;font-size:12.5px;cursor:pointer;margin-top:10px;}
+  button.copy:hover{background:#93e56f;} button.copy.copied{background:var(--amber);}
+  .selsum{font-family:var(--mono);font-size:11.5px;color:var(--dim);border-left:2px solid var(--green-dim);padding-left:10px;margin-bottom:12px;line-height:1.7;}
+  .selsum b{color:var(--text);}
+  .warnbox{border:1px solid #6b4a2a;background:#241a10;color:#e8c99a;border-radius:8px;padding:10px 12px;font-size:11.5px;margin-top:9px;line-height:1.55;}
+  .warnbox b{color:var(--amber);}
+  .steps{font-size:12px;}
+  .steps ol{padding-left:18px;margin:0;}
+  .steps li{margin-bottom:8px;}
+  .steps code{background:#0d100e;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--green);word-break:break-all;}
+  .sshfix{font-family:var(--mono);font-size:10.5px;background:#0d100e;border:1px solid var(--line);border-radius:6px;padding:9px 11px;color:var(--text);white-space:pre;overflow-x:auto;margin-top:7px;}
+  .vrow{display:block;width:100%;text-align:left;background:#0d100e;border:1px solid var(--line);border-radius:6px;padding:8px 11px;margin-bottom:6px;cursor:pointer;font-family:var(--mono);transition:.12s;}
+  .vrow:hover{border-color:var(--green-dim);}
+  .vrow.copied{border-color:var(--amber);}
+  .vrow .vc{color:var(--green);font-size:11.5px;display:block;word-break:break-all;}
+  .vrow .vd{color:var(--dim);font-size:10.5px;display:block;margin-top:1px;}
+  .vnote{font-size:10.5px;color:var(--dim);font-family:var(--mono);margin:2px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">ICER · MSU HPCC · SLURM</p>
+  <h1>Interactive Job Builder</h1>
+  <p class="sub">Work top to bottom — GPU first since it's the most restrictive choice. Simple picks up front, full lists behind each expander. Hardware data from ICER's <a href="https://docs.icer.msu.edu/Cluster_Resources/">docs</a> (May 2026 revision).</p>
+</header>
+
+<div class="grid">
+<div><!-- LEFT: decision flow -->
+
+  <div class="step">
+    <h2><span class="n">1</span>GPU <span class="picked" id="pGpu"></span></h2>
+    <div class="chips" id="gpuSimple">
+      <button class="chip on" data-gpu="none">No GPU</button>
+      <button class="chip" data-gpu="any">Any GPU</button>
+      <button class="chip" data-gpu="a100-80">A100 80GB</button>
+      <button class="chip" data-gpu="h200">H200 141GB</button>
+      <button class="chip arm" data-gpu="gh200">Grace Hopper</button>
+    </div>
+    <details><summary>full GPU list</summary>
+      <div class="chips full" id="gpuFull">
+        <button class="chip" data-gpu="v100">V100 32GB · nvl · 8/node</button>
+        <button class="chip" data-gpu="v100s">V100S 32GB · nvf · 4/node</button>
+        <button class="chip" data-gpu="a100-40">A100 40GB PCIe · nif · 4/node</button>
+        <button class="chip" data-gpu="a100-80">A100 80GB SXM · nal · 4/node</button>
+        <button class="chip" data-gpu="l40s">L40S 48GB (fp32 only) · nel · 8/node</button>
+        <button class="chip" data-gpu="h200">H200 141GB · nfh/neh · 4–8/node</button>
+        <button class="chip arm" data-gpu="gh200">GH200 96GB · Grace Hopper · ARM</button>
+        <button class="chip arm" data-gpu="gg">Grace Grace · 144 ARM cores, no GPU</button>
+      </div>
+    </details>
+    <div class="mini" id="gpuCountRow" style="display:none;">GPUs: <input type="number" id="gpuCount" value="1" min="1" max="8"></div>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">2</span>Cores <span class="picked" id="pCores"></span></h2>
+    <div class="chips" id="coreChips">
+      <button class="chip" data-cores="4">4</button>
+      <button class="chip" data-cores="8">8</button>
+      <button class="chip" data-cores="16">16</button>
+      <button class="chip" data-cores="32">32</button>
+      <button class="chip" data-cores="64">64</button>
+      <button class="chip" data-cores="128">128</button>
+      <button class="chip" data-cores="max">Max on node</button>
+    </div>
+    <div class="mini">custom: <input type="number" id="coreCustom" min="1" max="256" placeholder="e.g. 60"></div>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">3</span>RAM <span class="picked" id="pMem"></span></h2>
+    <div class="chips" id="memChips">
+      <button class="chip" data-mem="16">16G</button>
+      <button class="chip" data-mem="32">32G</button>
+      <button class="chip" data-mem="64">64G</button>
+      <button class="chip" data-mem="128">128G</button>
+      <button class="chip" data-mem="256">256G</button>
+      <button class="chip" data-mem="512">512G</button>
+      <button class="chip" data-mem="1000">1T</button>
+    </div>
+    <div class="mini">custom (GB): <input type="number" id="memCustom" min="1" max="6000" placeholder="e.g. 200"></div>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">4</span>Hardware match <span class="picked" id="pHw"></span></h2>
+    <div id="hwTop"></div>
+    <details id="hwMoreWrap"><summary>all matching node groups</summary><div class="full" id="hwAll"></div></details>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">5</span>Time <span class="picked" id="pTime"></span></h2>
+    <div class="chips" id="timeChips">
+      <button class="chip" data-time="1:00:00">1h</button>
+      <button class="chip on" data-time="2:00:00">2h</button>
+      <button class="chip" data-time="4:00:00">4h</button>
+      <button class="chip" data-time="1-00:00:00">24h</button>
+      <button class="chip" data-time="7-00:00:00">7 days</button>
+    </div>
+    <div class="mini">custom: <input type="text" id="timeCustom" placeholder="HH:MM:SS or D-HH:MM:SS"></div>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">+</span>Extras (optional)</h2>
+    <label style="margin-bottom:5px;">Command style</label>
+    <div class="seg" id="modeSeg">
+      <button data-mode="salloc" class="on">salloc</button>
+      <button data-mode="srun">srun --pty /bin/bash</button>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Partition</label>
+        <select id="tPart">
+          <option value="">auto (recommended)</option>
+          <option value="general-short">general-short · ≤4h</option>
+          <option value="general-long">general-long · ≤7d</option>
+          <option value="general-long-gpu">general-long-gpu</option>
+          <option value="general-long-bigmem">general-long-bigmem</option>
+          <option value="scavenger">scavenger · preemptible</option>
+        </select>
+      </div>
+      <div class="field"><label>Buy-in account (blank = none)</label><input type="text" id="tAcct" placeholder="--account="></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Job name (blank = none)</label><input type="text" id="tName" placeholder="--job-name="></div>
+      <div class="field"><label>Specific node (blank = any)</label><input type="text" id="tNode" placeholder="-w e.g. nch-001"></div>
+    </div>
+    <label class="checkline"><input type="checkbox" id="oPin"> Pin to matched cluster (--constraint)</label>
+    <label class="checkline" id="oBindRow" style="display:none;"><input type="checkbox" id="oBind"> CPU↔GPU locality (--gres-flags=enforce-binding)</label>
+    <label class="checkline"><input type="checkbox" id="oX11"> X11 forwarding (--x11)</label>
+  </div>
+
+</div>
+
+<div class="sticky"><!-- RIGHT -->
+  <div class="card">
+    <h2>Selected hardware</h2>
+    <div class="selsum" id="selSum">—</div>
+    <h2>Command</h2>
+    <div class="cmdbox" id="cmdOut"></div>
+    <button class="copy" id="copyBtn">Copy command</button>
+    <div id="warnings"></div>
+  </div>
+  <div class="card steps">
+    <h2>Then: terminal → VS Code</h2>
+    <ol>
+      <li><code>ssh msu-dev</code> from your Mac (submit from a dev node, not the gateway)</li>
+      <li>Paste the command; when it allocates, your prompt shows the node name</li>
+      <li id="stepGrace" style="display:none;"><b style="color:var(--purple)">Grace only:</b> on the node run<br><code>source /cvmfs/software.eessi.io/versions/2023.06/init/bash && module use /opt/modules/all</code></li>
+      <li>VS Code: <code>Cmd+Shift+P</code> → Remote-SSH: Connect to Host → that node name</li>
+      <li>Open notebook, pick kernel, go. Session ends at walltime.</li>
+    </ol>
+    <div class="warnbox" id="sshWarn" style="display:none;">
+      <b>SSH config gap:</b> your wildcard doesn't cover this node prefix — update to:
+      <div class="sshfix">Host lac-* vim-* skl-* nvl-* amr-* nvf-* nif-* nal-* acm-* nch-* ncc-* agg-* agx-* neh-* nfh-* nel-*
+    User petrecc1
+    ProxyJump msu-dev</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Once you're on — check what you got</h2>
+    <p class="vnote">click any command to copy it</p>
+    <button class="vrow" data-cmd="hostname"><span class="vc">hostname</span><span class="vd">which node you landed on</span></button>
+    <button class="vrow" data-cmd="squeue -u $USER"><span class="vc">squeue -u $USER</span><span class="vd">your running + queued jobs, with node names and time left</span></button>
+    <button class="vrow" data-cmd='scontrol show job $SLURM_JOB_ID | grep -E "NodeList|TRES|TimeLimit|RunTime"'><span class="vc">scontrol show job $SLURM_JOB_ID | grep -E "NodeList|TRES|TimeLimit|RunTime"</span><span class="vd">your actual allocation: node, cores, RAM (mem=), GPUs (gres/gpu), time</span></button>
+    <button class="vrow" data-cmd="nproc"><span class="vc">nproc</span><span class="vd">CPU cores actually usable by you (respects your allocation)</span></button>
+    <button class="vrow" data-cmd="free -h"><span class="vc">free -h</span><span class="vd">node's total RAM + usage — the whole node, NOT just your slice; your slice is mem= above</span></button>
+    <button class="vrow" data-cmd="nvidia-smi"><span class="vc">nvidia-smi</span><span class="vd">GPUs you can see: model, VRAM, current usage</span></button>
+    <button class="vrow" data-cmd="echo $CUDA_VISIBLE_DEVICES"><span class="vc">echo $CUDA_VISIBLE_DEVICES</span><span class="vd">which GPU indices SLURM assigned you (blank = no GPUs allocated)</span></button>
+    <button class="vrow" data-cmd='python -c "import torch; print(torch.cuda.is_available(), torch.cuda.device_count())"'><span class="vc">python -c "import torch; print(torch.cuda.is_available(), torch.cuda.device_count())"</span><span class="vd">inside your env: can PyTorch see the GPU(s)</span></button>
+  </div>
+</div>
+</div>
+
+</div>
+
+<script>
+// ── catalog: ICER Cluster Resources, May 2026 ──
+const GROUPS = [
+ {id:'agg-std', cluster:'amd24', nodes:'agg-[000-047]', count:48, cores:192, mem:768, disk:'960GB', gpu:null, arch:'x86'},
+ {id:'agg-15', cluster:'amd24', nodes:'agg-[048,065-072]', count:9, cores:192, mem:1536, disk:'960GB', gpu:null, arch:'x86'},
+ {id:'agg-23', cluster:'amd24', nodes:'agg-[049-064,073-078]', count:22, cores:192, mem:2355, disk:'960GB', gpu:null, arch:'x86'},
+ {id:'agx', cluster:'amd24', nodes:'agx-[000-001]', count:2, cores:192, mem:768, disk:'960GB', gpu:null, arch:'x86', note:'9684X 3D V-Cache'},
+ {id:'nfh', cluster:'amd24', nodes:'nfh-[000-005]', count:6, cores:192, mem:768, disk:'960GB', gpu:{key:'h200',label:'H200 141GB',n:4,gres:'h200',bind:8}, arch:'x86'},
+ {id:'neh', cluster:'amd24', nodes:'neh-[000-001]', count:2, cores:192, mem:768, disk:'960GB', gpu:{key:'h200',label:'H200 141GB',n:8,gres:'h200',bind:8}, arch:'x86'},
+ {id:'nel', cluster:'amd24', nodes:'nel-[000-002]', count:3, cores:192, mem:768, disk:'960GB', gpu:{key:'l40s',label:'L40S 48GB',n:8,gres:'l40s',bind:null}, arch:'x86', note:'fp32 only'},
+ {id:'acm-std', cluster:'amd22', nodes:'acm-[000-047]', count:48, cores:128, mem:493, disk:'412GB', gpu:null, arch:'x86'},
+ {id:'acm-1t', cluster:'amd22', nodes:'acm-[050-067]', count:18, cores:128, mem:996, disk:'412GB', gpu:null, arch:'x86'},
+ {id:'acm-2t', cluster:'amd22', nodes:'acm-[068-069]', count:2, cores:128, mem:2005, disk:'412GB', gpu:null, arch:'x86'},
+ {id:'acm-dm', cluster:'amd22', nodes:'acm-[048-049,070-071]', count:4, cores:256, mem:2005, disk:'412GB', gpu:null, arch:'x86', note:'Data Machine, HT pairs'},
+ {id:'nal-std', cluster:'amd21', nodes:'nal-[000-003,008-010]', count:7, cores:128, mem:512, disk:'1.92TB', gpu:{key:'a100-80',label:'A100 SXM 80GB',n:4,gres:'a100',bind:16}, arch:'x86', note:'NVLink'},
+ {id:'nal-dm', cluster:'amd21', nodes:'nal-[004-007]', count:4, cores:256, mem:512, disk:'1.92TB', gpu:{key:'a100-80',label:'A100 SXM 80GB',n:4,gres:'a100',bind:16}, arch:'x86', note:'Data Machine, HT pairs'},
+ {id:'nif', cluster:'intel21', nodes:'nif-[000-005]', count:6, cores:64, mem:256, disk:'1.92TB', gpu:{key:'a100-40',label:'A100 PCIe 40GB',n:4,gres:'a100',bind:32}, arch:'x86'},
+ {id:'amr-std', cluster:'amd20', nodes:'amr-[000-101,136-238,252-253]', count:207, cores:128, mem:493, disk:'412GB', gpu:null, arch:'x86'},
+ {id:'amr-1t', cluster:'amd20', nodes:'amr-[104-135,239-251]', count:45, cores:128, mem:996, disk:'412GB', gpu:null, arch:'x86'},
+ {id:'amr-2t', cluster:'amd20', nodes:'amr-[102-103]', count:2, cores:128, mem:2005, disk:'412GB', gpu:null, arch:'x86'},
+ {id:'nvf', cluster:'amd20', nodes:'nvf-[000-016,018-020]', count:20, cores:48, mem:178, disk:'412GB', gpu:{key:'v100s',label:'V100S 32GB',n:4,gres:'v100s',bind:24}, arch:'x86'},
+ {id:'nvf17', cluster:'amd20', nodes:'nvf-017', count:1, cores:48, mem:565, disk:'412GB', gpu:{key:'v100s',label:'V100S 32GB',n:4,gres:'v100s',bind:24}, arch:'x86'},
+ {id:'skl-83', cluster:'intel18', nodes:'skl-[000-011,013-112]', count:112, cores:40, mem:83, disk:'413GB', gpu:null, arch:'x86'},
+ {id:'skl-178', cluster:'intel18', nodes:'skl-[113-131]', count:19, cores:40, mem:178, disk:'413GB', gpu:null, arch:'x86'},
+ {id:'skl-367', cluster:'intel18', nodes:'skl-[132-139,148-167]', count:28, cores:40, mem:367, disk:'413GB', gpu:null, arch:'x86'},
+ {id:'skl-745', cluster:'intel18', nodes:'skl-[140-147]', count:8, cores:40, mem:745, disk:'413GB', gpu:null, arch:'x86'},
+ {id:'skl-012', cluster:'intel18', nodes:'skl-012', count:1, cores:40, mem:996, disk:'413GB', gpu:null, arch:'x86'},
+ {id:'nvl', cluster:'intel18', nodes:'nvl-[000-007]', count:8, cores:40, mem:367, disk:'413GB', gpu:{key:'v100',label:'V100 32GB',n:8,gres:'v100',bind:20}, arch:'x86', note:'NVLink'},
+ {id:'vim-3t', cluster:'intel16', nodes:'vim-[000-001]', count:2, cores:64, mem:3000, disk:'860GB', gpu:null, arch:'x86', constraint:'NOAUTO:vim', note:'old; NOAUTO:vim'},
+ {id:'vim-6t', cluster:'intel16', nodes:'vim-002', count:1, cores:144, mem:6000, disk:'3.7TB', gpu:null, arch:'x86', constraint:'NOAUTO:vim', note:'old; NOAUTO:vim'},
+ {id:'nch', cluster:'Grace Hopper', nodes:'nch-[000-002]', count:3, cores:72, mem:480, disk:'1.5TB', gpu:{key:'gh200',label:'GH200 96GB',n:1,gres:null,bind:72}, arch:'arm', constraint:'NOAUTO:grace', note:'ARM'},
+ {id:'nch3', cluster:'Grace Hopper', nodes:'nch-003', count:1, cores:72, mem:480, disk:'3.2TB', gpu:{key:'gh200',label:'GH200 96GB',n:1,gres:null,bind:72}, arch:'arm', constraint:'NOAUTO:grace', note:'ARM'},
+ {id:'ncc', cluster:'Grace Grace', nodes:'ncc-000', count:1, cores:144, mem:480, disk:'3.5TB', gpu:null, arch:'arm', constraint:'NOAUTO:grace', note:'ARM CPU-only'},
+];
+const SSH_COVERED = ['lac','vim','skl','nvl','amr','nvf','nif','nal','acm','nch'];
+const $ = id => document.getElementById(id);
+
+const state = {
+  gpu:'none', gpuCount:1,
+  cores:4, coresMax:false,
+  mem:null,               // GB or null = SLURM default
+  hw:null,                // chosen group id (null = auto)
+  time:'2:00:00',
+  mode:'salloc', part:'', acct:'', name:'', node:'', pin:false, bind:false, x11:false
+};
+
+// ── matching ──
+function candidates(){
+  return GROUPS.filter(g=>{
+    if (state.gpu==='none'){ if (g.gpu || g.arch==='arm') return false; }
+    else if (state.gpu==='any'){ if (!g.gpu || g.arch==='arm') return false; }
+    else if (state.gpu==='gg'){ if (g.id!=='ncc') return false; }
+    else { if (!g.gpu || g.gpu.key!==state.gpu) return false; }
+    const needCores = state.coresMax ? 1 : state.cores;
+    if (g.cores < needCores) return false;
+    if (state.mem && g.mem < state.mem) return false;
+    return true;
+  }).sort((a,b)=>{
+    const need = state.coresMax?0:state.cores;
+    const oa=(a.cores-need)+(state.mem?(a.mem-state.mem)/10:0);
+    const ob=(b.cores-need)+(state.mem?(b.mem-state.mem)/10:0);
+    if (oa!==ob) return oa-ob;      // least overshoot first
+    return b.count-a.count;         // then more nodes = shorter queue
+  });
+}
+function pooled(){ return state.gpu==='any' && !state.hw; }
+function currentGroup(){
+  const c = candidates();
+  if (state.hw){ const g=c.find(x=>x.id===state.hw); if (g) return g; }
+  if (pooled()) return null;   // whole-pool mode: no single group selected
+  return c[0]||null;
+}
+
+// ── render helpers ──
+function hwRow(g, on){
+  const specs=[`${g.count} node${g.count>1?'s':''}`,`${g.cores}c`,`${g.mem>=1000?(g.mem/1000).toFixed(1)+'T':g.mem+'G'} RAM`,g.disk];
+  if (g.gpu) specs.push(`<span class="gpu">${g.gpu.n}× ${g.gpu.label}</span>`);
+  if (g.arch==='arm') specs.push(`<span class="arm">ARM64</span>`);
+  if (g.note) specs.push(`<span class="warn">${g.note}</span>`);
+  return `<div class="hw${on?' on':''}" data-id="${g.id}"><div class="hw-name">${g.nodes} · ${g.cluster}</div><div class="hw-spec">${specs.join(' · ')}</div></div>`;
+}
+
+function render(){
+  const c = candidates();
+  const g = currentGroup();
+
+  // picked labels
+  const gpuLabels={none:'no GPU',any:'any GPU','v100':'V100','v100s':'V100S','a100-40':'A100 40G','a100-80':'A100 80G','h200':'H200','l40s':'L40S','gh200':'Grace Hopper','gg':'Grace Grace'};
+  $('pGpu').textContent = (pooled()?'any GPU (whole pool)':gpuLabels[state.gpu]) + (state.gpu!=='none'&&state.gpu!=='gg'&&state.gpu!=='gh200'?` ×${state.gpuCount}`:'');
+  $('pCores').textContent = state.coresMax ? (g?`max = ${g.cores}`:'max on node') : state.cores+' cores';
+  $('pMem').textContent = state.mem ? state.mem+' GB' : 'SLURM default';
+  $('pTime').textContent = state.time;
+  $('pHw').textContent = g ? g.nodes : '—';
+
+  // gpu count row
+  $('gpuCountRow').style.display = (['none','gg','gh200'].includes(state.gpu))?'none':'flex';
+  if (g && g.gpu) $('gpuCount').max = g.gpu.n;
+
+  // hardware matches
+  if (!c.length){
+    $('hwTop').innerHTML = `<p class="nofit-msg">No node group satisfies that combo — lower cores/RAM or change GPU.</p>`;
+    $('hwAll').innerHTML='';
+  } else if (state.gpu==='any'){
+    const poolCard = `<div class="hw${pooled()?' on':''}" data-id="__pool__"><div class="hw-name">🎲 Whole GPU pool — let SLURM pick</div><div class="hw-spec">untyped <span class="gpu">--gpus=${state.gpuCount}</span> · any of the ${c.reduce((a,x)=>a+x.count,0)} x86 GPU nodes below that fits your cores/RAM · usually the shortest queue</div></div>`;
+    $('hwTop').innerHTML = poolCard + c.slice(0,2).map(x=>hwRow(x, g&&x.id===g.id)).join('');
+    $('hwAll').innerHTML = c.slice(2).map(x=>hwRow(x, g&&x.id===g.id)).join('') || '<p class="hw-spec" style="margin:6px 0;">no more matches</p>';
+    document.querySelectorAll('.hw').forEach(el=> el.addEventListener('click', ()=>{ state.hw = el.dataset.id==='__pool__' ? null : el.dataset.id; render(); }));
+  } else {
+    $('hwTop').innerHTML = c.slice(0,3).map(x=>hwRow(x, g&&x.id===g.id)).join('');
+    $('hwAll').innerHTML = c.slice(3).map(x=>hwRow(x, g&&x.id===g.id)).join('') || '<p class="hw-spec" style="margin:6px 0;">no more matches</p>';
+    document.querySelectorAll('.hw').forEach(el=> el.addEventListener('click', ()=>{ state.hw=el.dataset.id; render(); }));
+  }
+
+  // bind option
+  const showBind = g && g.gpu && g.arch!=='arm';
+  $('oBindRow').style.display = showBind?'flex':'none';
+
+  // selection summary
+  if (pooled() && c.length){
+    $('selSum').innerHTML = `<b>Whole GPU pool</b> — untyped request<br>SLURM places you on any x86 GPU node that fits (${c.length} group types, V100 32GB up to H200 141GB)<br>Grace Hopper excluded — its NOAUTO constraint keeps it out of automatic scheduling`;
+  } else if (g){
+    $('selSum').innerHTML = `<b>${g.nodes}</b> — ${g.cluster}<br>${g.count} node(s) · <b>${g.cores}</b> cores · <b>${g.mem>=1000?(g.mem/1000).toFixed(1)+' TB':g.mem+' GB'}</b> RAM · ${g.disk} disk<br>GPU: ${g.gpu?`${g.gpu.n}× ${g.gpu.label}`:'none'} · ${g.arch==='arm'?'ARM aarch64':'x86_64'}`;
+  } else $('selSum').textContent='—';
+
+  // command
+  let parts=[state.mode==='salloc'?'salloc':'srun'];
+  if (g && g.constraint) parts.push(`--constraint=${g.constraint}`);
+  else if (g && state.pin) parts.push(`--constraint=${g.cluster}`);
+  if (state.time) parts.push(`--time=${state.time}`);
+  if (pooled()){
+    parts.push(`--gpus=${state.gpuCount}`);
+  } else if (g && g.gpu){
+    if (g.arch==='arm') parts.push('--gpus=1');
+    else parts.push(`--gpus=${g.gpu.gres}:${Math.min(state.gpuCount, g.gpu.n)}`);
+  }
+  const coresVal = state.coresMax ? (g ? g.cores : (pooled()&&c.length ? Math.min(...c.map(x=>x.cores)) : 1)) : state.cores;
+  parts.push(`--cpus-per-task=${coresVal}`);
+  if (state.mem) parts.push(`--mem=${state.mem}G`);
+  if (state.part) parts.push(`--partition=${state.part}`);
+  if (state.bind && showBind && g.gpu.bind!==null) parts.push('--gres-flags=enforce-binding');
+  if (state.acct) parts.push(`--account=${state.acct}`);
+  if (state.name) parts.push(`--job-name=${state.name}`);
+  if (state.node) parts.push(`-w ${state.node}`);
+  else if (g && g.id==='ncc') parts.push('-w ncc-000');
+  if (state.x11) parts.push('--x11');
+  if (state.mode==='srun') parts.push('--pty /bin/bash');
+  $('cmdOut').innerHTML = parts.map((p,i)=> i===0?p:(p.startsWith('--')||p.startsWith('-w')?`<span class="flag">${p}</span>`:p)).join(' ');
+
+  // grace step + ssh gap
+  const isArm = g && g.arch==='arm';
+  $('stepGrace').style.display = isArm?'list-item':'none';
+  let gap=false;
+  if (g){ const prefix=g.nodes.split('-')[0].replace('[',''); gap=!SSH_COVERED.includes(prefix); }
+  $('sshWarn').style.display = gap?'block':'none';
+
+  // warnings
+  const w=[];
+  if (pooled() && c.length){
+    w.push(`<b>Pool roulette:</b> you could land on anything from a V100 (32GB, compute capability 7.0) to an H200 (141GB, CC 9.0). Fine for most PyTorch work, but if your code needs newer GPU features or lots of VRAM, narrow to a type. ICER's docs recommend typed requests for exactly this reason.`);
+  }
+  if (g){
+    if (isArm) w.push(`<b>ARM node.</b> x86 miniforge envs won't run — use an aarch64 env or EESSI modules. Non-buy-in jobs cap at <b>4h</b>.`);
+    if (g.note && g.note.includes('Data Machine')) w.push(`<b>Data Machine:</b> hyperthreaded, CPUs allocate in pairs — request an even core count.`);
+    if (coresVal===g.cores) w.push(`Requesting <b>all cores</b> on the node — needs a fully idle node, expect longer queue.`);
+    if (state.part==='general-short' && (/^\d+-/.test(state.time) || +state.time.split(':')[0]>4)) w.push(`<b>Time exceeds partition:</b> general-short caps at 4:00:00.`);
+    if (showBind && state.bind && g.gpu.bind!==null && coresVal > g.gpu.bind*Math.min(state.gpuCount,g.gpu.n)) w.push(`enforce-binding limits you to <b>${g.gpu.bind} CPUs/GPU</b> here — your request exceeds that.`);
+  }
+  $('warnings').innerHTML = w.map(x=>`<div class="warnbox">${x}</div>`).join('');
+}
+
+// ── wiring ──
+function wireChips(containerIds, dataKey, handler){
+  containerIds.forEach(cid=>{
+    document.querySelectorAll(`#${cid} .chip`).forEach(ch=> ch.addEventListener('click', ()=>{
+      handler(ch.dataset[dataKey], ch);
+      // sync .on across both simple + full lists
+      containerIds.forEach(c2=> document.querySelectorAll(`#${c2} .chip`).forEach(x=> x.classList.toggle('on', x.dataset[dataKey]===ch.dataset[dataKey])));
+      render();
+    }));
+  });
+}
+wireChips(['gpuSimple','gpuFull'],'gpu',(v)=>{ state.gpu=v; state.hw=null; if(v==='gh200'){state.coresMax=false;} });
+wireChips(['coreChips'],'cores',(v)=>{ if(v==='max'){state.coresMax=true;} else {state.coresMax=false; state.cores=+v;} $('coreCustom').value=''; state.hw=null; });
+wireChips(['memChips'],'mem',(v)=>{ state.mem=+v; $('memCustom').value=''; state.hw=null; });
+wireChips(['timeChips'],'time',(v)=>{ state.time=v; $('timeCustom').value=''; });
+
+$('coreCustom').addEventListener('input', e=>{ if(e.target.value){ state.cores=+e.target.value; state.coresMax=false; state.hw=null; document.querySelectorAll('#coreChips .chip').forEach(x=>x.classList.remove('on')); render(); }});
+$('memCustom').addEventListener('input', e=>{ if(e.target.value){ state.mem=+e.target.value; state.hw=null; document.querySelectorAll('#memChips .chip').forEach(x=>x.classList.remove('on')); render(); }});
+$('timeCustom').addEventListener('input', e=>{ if(e.target.value){ state.time=e.target.value; document.querySelectorAll('#timeChips .chip').forEach(x=>x.classList.remove('on')); render(); }});
+$('gpuCount').addEventListener('input', e=>{ state.gpuCount=+e.target.value||1; render(); });
+
+$('modeSeg').querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{
+  state.mode=b.dataset.mode;
+  $('modeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  render();
+}));
+$('tPart').addEventListener('change', e=>{ state.part=e.target.value; render(); });
+$('tAcct').addEventListener('input', e=>{ state.acct=e.target.value.trim(); render(); });
+$('tName').addEventListener('input', e=>{ state.name=e.target.value.trim(); render(); });
+$('tNode').addEventListener('input', e=>{ state.node=e.target.value.trim(); render(); });
+$('oPin').addEventListener('change', e=>{ state.pin=e.target.checked; render(); });
+$('oBind').addEventListener('change', e=>{ state.bind=e.target.checked; render(); });
+$('oX11').addEventListener('change', e=>{ state.x11=e.target.checked; render(); });
+
+$('copyBtn').addEventListener('click', ()=>{
+  navigator.clipboard.writeText($('cmdOut').innerText).then(()=>{
+    const b=$('copyBtn'); b.textContent='Copied ✓'; b.classList.add('copied');
+    setTimeout(()=>{ b.textContent='Copy command'; b.classList.remove('copied'); },1400);
+  });
+});
+
+document.querySelectorAll('.vrow').forEach(v=> v.addEventListener('click', ()=>{
+  navigator.clipboard.writeText(v.dataset.cmd).then(()=>{
+    v.classList.add('copied');
+    const d=v.querySelector('.vd'), orig=d.textContent;
+    d.textContent='copied ✓';
+    setTimeout(()=>{ v.classList.remove('copied'); d.textContent=orig; },1200);
+  });
+}));
+
+render();
+</script>
+</body>
+</html>

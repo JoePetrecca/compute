@@ -1,6 +1,6 @@
 import { prepareProfiles, sidebarSubtitle } from "./profiles.js";
 import { buildUsage, usageDefaults, usageConfig, usageValuesFor, graceSetup } from "./usage.js";
-import { clusterInventory, clusterLayout } from "./cluster.js";
+import { clusterInventory, clusterLayout, parseBuyInNodes } from "./cluster.js";
 import { mountClusterMap } from "./cluster-view.js";
 const $ = (selector) => document.querySelector(selector);
 const state = { profiles: [], current: null, clusterOverview: false, sidebarMode: readSidebarMode(), diagramView: "simple", local: { integrated: true, npu: false, discrete: false } };
@@ -13,6 +13,8 @@ let generatedUsage = "";
 let usageProfileId = null;
 const savedUsage = new Map();
 let disposeClusterMap = null;
+let buyInNodes = new Set();
+let buyInDataAvailable = false;
 
 function setMachineTab(tab) {
   const enabled = !state.clusterOverview && Boolean(usageConfig(state.current, state.profiles));
@@ -138,7 +140,9 @@ async function loadProfiles() {
     if (!response.ok) throw new Error(`Could not load ${path}`);
     return response.json();
   };
-  const [copy, reference, profileFiles] = await Promise.all([loadJson("data/components.json"), loadJson("data/hardware.json"), loadJson("data/computers.json")]);
+  const [copy, reference, profileFiles, nodeText] = await Promise.all([loadJson("data/components.json"), loadJson("data/hardware.json"), loadJson("data/computers.json"), fetch("nodes.txt").then(response => response.ok ? response.text() : null).catch(() => null)]);
+  buyInDataAvailable = nodeText !== null;
+  buyInNodes = parseBuyInNodes(nodeText || "");
   componentCopy = copy;
   hardware = reference;
   const profiles = await Promise.all(profileFiles.map(async (file) => {
@@ -188,6 +192,8 @@ function renderList() {
 
 function choose(id) {
   if (id === "hpcc") { showCluster(); return; }
+  $("#component-legend").hidden = false;
+  $("#island-legend").hidden = true;
   if (disposeClusterMap) { disposeClusterMap(); disposeClusterMap = null; }
   state.clusterOverview = false;
   $("#cluster-panel").hidden = true;
@@ -281,8 +287,10 @@ function diagramContent(p, view = state.diagramView) {
 
 function showCluster() {
   if (disposeClusterMap) disposeClusterMap();
+  $("#component-legend").hidden = true;
+  $("#island-legend").hidden = false;
   state.clusterOverview = true;
-  const inventory = clusterInventory(state.profiles);
+  const inventory = clusterInventory(state.profiles, hardware);
   const layout = clusterLayout(inventory);
   $("#computer-group").textContent = "HPCC · Cluster overview";
   $("#computer-name").textContent = "The HPCC";
@@ -295,7 +303,7 @@ function showCluster() {
     const drawing = picture.drawing.replace(/\s(?:data-part|tabindex|role|aria-label)="[^"]*"/g, "");
     return `<symbol id="cluster-${esc(p.id)}" class="${picture.superchip ? "superchip-diagram" : ""}" viewBox="0 0 1000 ${picture.height}">${drawing}</symbol>`;
   }).join("");
-  const stats = [["Compute nodes", inventory.computeNodes], ["Development nodes", inventory.developmentNodes], ["Physical CPU cores · compute", inventory.physicalCores], ["Physical GPUs · compute", inventory.physicalGpus]];
+  const stats = [["Compute nodes", inventory.computeNodes], ["Development nodes", inventory.developmentNodes], ["CPUs · compute", inventory.physicalCpus], ["CPU cores · compute", inventory.physicalCores], ["GPUs · compute", inventory.physicalGpus], ["GPU CUDA cores · compute", inventory.gpuCores], ["System RAM · compute", `${inventory.memoryGb.toLocaleString("en-US")} GB`]];
   const world = layout.groups.map(group => {
     const count = group.configurations.reduce((sum, block) => sum + block.nodes.length, 0);
     const labelX = group.x + group.width / 2;
@@ -304,7 +312,7 @@ function showCluster() {
     return `<g class="map-section" data-map-group="${esc(group.name)}" data-map-family="${esc(group.label)}">
       <rect class="map-section-frame" x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" rx="20"/>
       <text class="map-section-title" x="${group.x + 8}" y="${group.y + 20}" style="font-size: ${Math.min(20, (group.width - 16) / ((group.label.length + group.name.length + 12) * 0.55))}px">${esc(group.label)} · ${esc(group.name.replace("ICER · ", ""))} · ${count} nodes</text>
-      ${group.configurations.map(block => `<g class="map-configuration" data-configuration="${esc(block.profile.id)}"><text class="map-configuration-title" x="${block.x + 2}" y="${block.y + 14}" style="font-size: ${Math.min(18, (block.width - 4) / (block.profile.label.length * 0.6))}px">${esc(block.profile.label)}</text><text class="map-configuration-count" x="${block.x + 2}" y="${block.y + 29}" style="font-size: ${Math.min(13, (block.width - 4) / 22)}px">${block.nodes.length} ${block.nodes.length === 1 ? "node" : "nodes"} · ${esc(block.profile.memory)} RAM per node</text>${block.nodes.map(node => `<g class="map-node" data-node="${esc(node.name)}"><title>${esc(node.name)} · ${esc(block.profile.label)}</title><rect class="map-node-paper" x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height - 18}" rx="4"/><use href="#cluster-${esc(block.profile.id)}" x="${node.x + 2}" y="${node.y + 2}" width="${node.width - 4}" height="${node.height - 22}"/><text class="map-node-name" x="${node.x + node.width / 2}" y="${node.y + node.height - 3}" text-anchor="middle">${esc(node.name)}</text></g>`).join("")}</g>`).join("")}
+      ${group.configurations.map(block => `<g class="map-configuration" data-configuration="${esc(block.profile.id)}"><text class="map-configuration-title" x="${block.x + 2}" y="${block.y + 14}" style="font-size: ${Math.min(18, (block.width - 4) / (block.profile.label.length * 0.6))}px">${esc(block.profile.label)}</text><text class="map-configuration-count" x="${block.x + 2}" y="${block.y + 29}" style="font-size: ${Math.min(13, (block.width - 4) / 22)}px">${block.nodes.length} ${block.nodes.length === 1 ? "node" : "nodes"} · ${esc(block.profile.memory)} RAM per node</text>${block.nodes.map(node => `<g class="map-node" data-node="${esc(node.name)}"><title>${esc(node.name)} · ${esc(block.profile.label)}${buyInNodes.has(node.name) ? " · Buy-in" : ""}</title><rect class="map-node-paper" x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height - 18}" rx="4"/><use href="#cluster-${esc(block.profile.id)}" x="${node.x + 2}" y="${node.y + 2}" width="${node.width - 4}" height="${node.height - 22}"/>${buyInNodes.has(node.name) ? `<text class="map-buyin-marker" x="${node.x + node.width - 9}" y="${node.y + 13}" text-anchor="middle" aria-hidden="true">$</text>` : ""}<text class="map-node-name" x="${node.x + node.width / 2}" y="${node.y + node.height - 3}" text-anchor="middle">${esc(node.name)}</text></g>`).join("")}</g>`).join("")}
       <g class="map-island-label" aria-hidden="true"><text x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" style="font-size: ${titleSize}px">${esc(group.label)}</text><text class="map-island-subtitle" x="${labelX}" y="${labelY + titleSize * 0.7}" text-anchor="middle" style="font-size: ${Math.min(32, titleSize * 0.3)}px">${esc(group.name.replace("ICER · ", ""))} · ${count} nodes</text></g>
     </g>`;
   }).join("");
@@ -312,12 +320,12 @@ function showCluster() {
     <div class="cluster-map" id="cluster-map"><div class="cluster-map-toolbar"><span>Scroll / pinch to zoom · drag to pan</span><div class="cluster-map-controls" role="group" aria-label="Cluster map controls"><button type="button" data-map-action="out" aria-label="Zoom out">−</button><output id="cluster-zoom" aria-label="Zoom level">Fit</output><button type="button" data-map-action="in" aria-label="Zoom in">+</button><button type="button" data-map-action="fit">Fit all</button><button type="button" data-map-action="actual">100%</button><button type="button" data-map-action="fullscreen">Fullscreen</button></div></div>
       <div id="cluster-viewport" class="cluster-viewport" tabindex="0" role="region" aria-label="Zoomable HPCC map. Use plus or minus to zoom, arrow keys to pan, and zero to fit all nodes.">
         <svg id="cluster-canvas" class="cluster-canvas" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" role="img" aria-labelledby="cluster-map-title cluster-map-description"><title id="cluster-map-title">The HPCC · ${inventory.totalNodes} individual nodes</title><desc id="cluster-map-description">One miniature of the existing architecture diagram for each represented physical node, grouped by configuration. CPU, GPU, Data Machine, Superchip and shared development nodes; Moria is not part of the cluster.</desc>${superchipGradients()}<defs>${symbols}</defs><g id="cluster-world">${world}</g></svg>
-      </div><p class="cluster-map-status" role="status">Hover over a node for its name. Keyboard: + / − zoom, arrows pan, 0 fits everything. Use the sidebar to open individual configurations.</p>
+      </div><p class="cluster-map-status" role="status">${buyInDataAvailable ? '<span class="map-buyin-legend">$</span> Buy-in node · ' : 'Buy-in node data unavailable · '}Hover over a node for its name; click it to open its configuration. Keyboard: + / − zoom, arrows pan, 0 fits everything. Use the sidebar to open individual configurations.</p>
     </div>
     <dl class="cluster-stats" aria-label="Cluster inventory totals">${stats.map(([label, count]) => `<div><dt>${label}</dt><dd>${count.toLocaleString("en-US")}</dd></div>`).join("")}</dl>
-    <p class="cluster-note">${inventory.totalNodes} nodes across ${inventory.configurations.length} configurations in this atlas. Static inventory—not live availability, a network topology map, or one shared memory pool. Gateways, storage services, and other unlisted infrastructure are not pictured. Moria is separate.</p>`;
+    <p class="cluster-note">${inventory.totalNodes} nodes across ${inventory.configurations.length} configurations in this atlas. Hardware totals exclude development nodes; GPU cores are physical CUDA cores, not Tensor cores. RAM is CPU-side system memory, with 1 TB counted as 1,000 GB. Static inventory—not live availability, a network topology map, or one shared memory pool. Gateways, storage services, and other unlisted infrastructure are not pictured. Moria is separate.</p>`;
   $("#cluster-panel").hidden = false;
-  disposeClusterMap = mountClusterMap({ root: $("#cluster-map"), viewport: $("#cluster-viewport"), world: $("#cluster-world"), readout: $("#cluster-zoom"), width: layout.width, height: layout.height });
+  disposeClusterMap = mountClusterMap({ root: $("#cluster-map"), viewport: $("#cluster-viewport"), world: $("#cluster-world"), readout: $("#cluster-zoom"), width: layout.width, height: layout.height, onSelectNode: id => { if (document.fullscreenElement === $("#cluster-map")) document.exitFullscreen().catch(() => {}); choose(id); } });
   renderList();
 }
 
