@@ -5,6 +5,7 @@
     "grace": { "label": "ICER · NVIDIA Grace nodes", "url": "https://docs.icer.msu.edu/Getting_Started_with_Grace_Hopper_and_Grace_Grace/" },
     "data": { "label": "ICER · Data Machine resources", "url": "https://docs.icer.msu.edu/Using_the_Data_Machine/" },
     "development": { "label": "ICER · Development nodes", "url": "https://docs.icer.msu.edu/development_nodes/" },
+    "gateway": { "label": "ICER · Gateway usage (VM specifications user-provided and unverified)", "url": "https://docs.icer.msu.edu/HPC_s_entire_layout_at_ICER/" },
     "gpu": { "label": "ICER · GPU resources", "url": "https://docs.icer.msu.edu/GPU_resources/" }
   },
   "cpus": {

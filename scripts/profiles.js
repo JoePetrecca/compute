@@ -8,6 +8,7 @@ export function expandNodes(range = "") {
 }
 
 export function sidebarSubtitle(p, mode) {
+  if (p.sourceKey === "gateway") return mode === "specs" ? `${p.vcpus} vCPUs · ${p.memory} RAM per VM` : p.workloadLabel;
   if (mode === "specs") {
     if (p.id === "moria") return "96 CPU cores · 2 × RTX A4000";
     if (p.mig) return `${p.sliceMemory}/slice · ${p.gpuCount} physical A100s`;
@@ -45,7 +46,7 @@ export function prepareProfiles(rawProfiles, hardware) {
     p.nodes = expandNodes(p.nodeRange);
     p.nodeCount ||= p.nodes.length;
     const cpu = hardware.cpus[p.cpu];
-    if (cpu) {
+    if (cpu && p.sourceKey !== "gateway") {
       const sockets = p.cores / cpu.coresPerSocket;
       p.coresPerSocket ||= cpu.coresPerSocket;
       p.cachePerSocket ||= cpu.cachePerSocket;

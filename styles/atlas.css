@@ -61,6 +61,17 @@ nav section { margin-bottom: 10px; }
 [data-group="ICER · GPU"] .profile-icon { background: #eee5f8; color: #8864ac; }
 [data-group="ICER · Data Machine"] .profile-icon { background: #fbecd9; color: #aa713e; }
 [data-group="ICER · Development"] .profile-icon { background: #f8e5e5; color: #a76565; }
+[data-group="ICER · Gateway"] .profile-icon { background: #fce3ef; color: #ac4b7d; }
+[data-group="ICER · Gateway"] .computer[aria-current=true] { background: #fce3ef; color: #9d346d; }
+[data-group="ICER · Gateway"] .computer[aria-current=true] .profile-icon { background: #f6c8df; color: #9d346d; }
+.map-gateway-frame { fill: #fff3f9; stroke: #e7b6cf; stroke-width: 2; stroke-dasharray: 10 7; }
+.map-gateway-title { fill: #95365f; font-size: 17px; font-weight: 700; }
+.map-gateway-subtitle { fill: #89576e; font-size: 8px; }
+.map-gateway-card { fill: #fff; stroke: #d98bb3; stroke-width: 2; }
+.map-gateway-node:hover .map-gateway-card { fill: #fce3ef; }
+.map-gateway-icon { fill: none; stroke: #b54e81; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.map-gateway-name { fill: #842b59; font-size: 12px; font-weight: 700; }
+.map-gateway-detail { fill: #80516b; font-size: 11px; }
 .pickaxe-glyph { width: 20px; height: 20px; background: currentColor; -webkit-mask: url("../assets/icons/pickaxe.svg") center / contain no-repeat; mask: url("../assets/icons/pickaxe.svg") center / contain no-repeat; }
 .computer[aria-current=true] .profile-icon { background: #c9def8; color: #246aa8; }
 .computer strong { display: block; font-size: 12px; font-weight: 550; line-height: 1.4; }

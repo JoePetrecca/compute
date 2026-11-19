@@ -15,7 +15,7 @@ const profiles = prepareProfiles(raw, hardware);
 
 test("manifest contains unique, complete profiles and valid node counts", () => {
   assert.equal(new Set(manifest).size, manifest.length);
-  assert.equal(profiles.length, 37);
+  assert.equal(profiles.length, 38);
   assert.ok(!manifest.includes("intel") && !manifest.includes("amd"));
   assert.ok(manifest.includes("moria"));
   for (const p of profiles) {
@@ -32,7 +32,7 @@ test("all archived ICER nodes remain represented without duplicates", async () =
   const archive = await readFile(new URL("Compute-Atlas.html", root), "utf8");
   const old = JSON.parse(archive.match(/const PROFILES = (\[[\s\S]*?\n    \]);/)[1]);
   const expected = new Set(old.filter((p) => p.group.startsWith("ICER")).flatMap((p) => p.nodes));
-  const current = profiles.filter((p) => p.group.startsWith("ICER")).flatMap((p) => p.nodes);
+  const current = profiles.filter((p) => p.group.startsWith("ICER") && p.sourceKey !== "gateway").flatMap((p) => p.nodes);
   assert.equal(current.length, new Set(current).size);
   assert.deepEqual(new Set(current), expected);
 });
@@ -45,6 +45,21 @@ test("physical core and slice capacities are distinct from allocatable resources
   assert.equal(mig.vram, "80 GB");
   assert.equal(mig.sliceMemory, "10 GB");
   assert.equal(profiles.find((p) => p.id === "grace-grace").cpuLink, "NVLink-C2C");
+});
+
+test("gateway VMs remain distinct from physical cluster inventory", () => {
+  const gateway = profiles.find(p => p.id === "gateway");
+  assert.deepEqual(gateway.nodes, ["gateway-00", "gateway-01", "gateway-02", "gateway-03"]);
+  assert.equal(gateway.vcpus, 4);
+  assert.equal(gateway.memory, "30 GiB");
+  assert.equal(gateway.swap, "3.8 GiB");
+  assert.equal(gateway.virtualization, "VMware");
+  assert.equal(gateway.cores, undefined);
+  assert.match(gateway.note, /unverified/);
+  const inventory = clusterInventory(profiles, hardware);
+  assert.equal(inventory.computeNodes, 640);
+  assert.equal(inventory.totalNodes, 645);
+  assert.ok(!inventory.configurations.includes(gateway));
 });
 
 test("sidebar subtitles describe workloads or specifications without renaming machines", () => {
@@ -134,7 +149,7 @@ test("every view and clickable component renders usable information", async () =
   app = app.replace(/^import .*\n/gm, "").replace("loadProfiles().catch", "globalThis.ready = loadProfiles().catch");
   vm.runInContext(app, context);
   await context.ready;
-  assert.deepEqual(manifest.slice(0, 5), ["dev-amd24", "dev-amd24-h200", "dev-amd20", "dev-amd20-v100", "dev-intel18"]);
+  assert.deepEqual(manifest.slice(0, 6), ["gateway", "dev-amd24", "dev-amd24-h200", "dev-amd20", "dev-amd20-v100", "dev-intel18"]);
   assert.deepEqual(manifest.slice(-4), ["grace-hopper", "grace-hopper-003", "grace-grace", "moria"]);
   assert.ok(elements.get("#computer-list").innerHTML.includes('<strong>dev-amd24</strong><small class="profile-subname">Dev · Genoa</small>'));
   assert.equal((elements.get("#computer-list").innerHTML.match(/class="pickaxe-glyph"/g) || []).length, 1);
@@ -147,7 +162,7 @@ test("every view and clickable component renders usable information", async () =
   assert.equal((elements.get("#computer-list").innerHTML.match(/data-icon="terminal"/g) || []).length, 3);
   assert.equal((elements.get("#computer-list").innerHTML.match(/data-icon="grace-hopper"/g) || []).length, 2);
   assert.equal((elements.get("#computer-list").innerHTML.match(/data-icon="grace-grace"/g) || []).length, 1);
-  for (const group of ["CPU", "GPU", "Data Machine", "Development", "Superchips"]) assert.ok(elements.get("#computer-list").innerHTML.includes(`data-group="ICER · ${group}"`));
+  for (const group of ["CPU", "GPU", "Data Machine", "Development", "Superchips", "Gateway"]) assert.ok(elements.get("#computer-list").innerHTML.includes(`data-group="ICER · ${group}"`));
   assert.equal(vm.runInContext("state.diagramView", context), "simple");
   assert.equal(vm.runInContext("state.sidebarMode", context), "specs");
   vm.runInContext("choose('h200-4'); setMachineTab('usage');", context);
@@ -219,10 +234,13 @@ test("every view and clickable component renders usable information", async () =
     assert.equal(elements.get("#usage-panel").hidden, profile.id === "moria");
     if (profile.id !== "moria") {
       const config = usageConfig(profile, profiles);
-      assert.ok(!elements.get("#usage-output").innerHTML.includes("undefined"), profile.id);
+      if (!config.gateway) assert.ok(!elements.get("#usage-output").innerHTML.includes("undefined"), profile.id);
       assert.equal(elements.get("#usage-panel").innerHTML.includes('name="gpus"'), Boolean(config.maxGpus), profile.id);
       if (profile.mig) assert.ok(!elements.get("#usage-panel").innerHTML.includes('id="whole-node"'));
-      if (profile.sourceKey === "development") {
+      if (config.gateway) {
+        assert.ok(elements.get("#usage-panel").innerHTML.includes("ssh &lt;username&gt;@hpcc.msu.edu"));
+        assert.ok(!elements.get("#usage-panel").innerHTML.includes('id="resource-form"'));
+      } else if (profile.sourceKey === "development") {
         assert.ok(elements.get("#usage-output").innerHTML.includes(`ssh ${profile.id}`));
         assert.ok(!elements.get("#usage-panel").innerHTML.includes('id="resource-form"'));
         assert.ok(!elements.get("#usage-panel").innerHTML.includes("data-usage-mode"));
@@ -302,7 +320,11 @@ test("every view and clickable component renders usable information", async () =
   for (const action of ["in", "out", "fit", "actual", "fullscreen"]) assert.ok(overview.includes(`data-map-action="${action}"`));
   assert.equal(mapMounts.length, 1);
   assert.ok(mapMounts[0].width > 0 && mapMounts[0].width < 7600);
-  for (const p of profiles.filter(p => p.group.startsWith("ICER"))) {
+  assert.ok(overview.includes('data-configuration="gateway"'));
+  assert.equal((overview.match(/class="map-node map-gateway-node"/g) || []).length, 4);
+  assert.equal((overview.match(/class="map-gateway-icon"/g) || []).length, 4);
+  for (const node of ["gateway-00", "gateway-01", "gateway-02", "gateway-03"]) assert.ok(overview.includes(`data-node="${node}"`));
+  for (const p of profiles.filter(p => p.group.startsWith("ICER") && p.sourceKey !== "gateway")) {
     const drawing = vm.runInContext(`diagramContent(state.profiles.find(p => p.id === '${p.id}'), 'simple').drawing`, context).replace(/\s(?:data-part|tabindex|role|aria-label)="[^"]*"/g, "");
     assert.ok(overview.includes(drawing), `${p.id}: uses the existing diagram`);
     for (const node of p.nodes) assert.ok(overview.includes(`data-node="${node}"`));

@@ -1,0 +1,14 @@
+{
+  "id": "gateway", "label": "Gateway nodes", "group": "ICER · Gateway", "sourceKey": "gateway",
+  "cpu": "AMD EPYC 9654", "vcpus": 4, "memory": "30 GiB", "swap": "3.8 GiB", "virtualization": "VMware",
+  "nodeRange": "gateway-[00–03]", "nodeCount": 4,
+  "workloadLabel": "SSH entry to HPCC",
+  "description": "Four shared VMware virtual machines provide SSH entry to the HPCC. Resources shown are per VM, not physical host specifications.",
+  "goodFor": "Connecting from your computer to an ICER development node through SSH.",
+  "limitations": "Not for computational workloads, compiling, running software, accessing scratch, or connecting directly to compute nodes. Use a development node after connecting.",
+  "note": "VM names and allocations are user-provided observations, unverified and undated; they may change. The number and placement of underlying physical servers are unknown. The VMs may share a host or be distributed across hosts.",
+  "components": {
+    "cpu": { "title": "4 virtual CPUs", "goodFor": "Supporting the gateway's SSH entry role.", "limitations": "vCPUs are virtual allocations, not a count of physical processor cores. Gateway nodes are not for workloads." },
+    "memory": { "title": "30 GiB virtual machine RAM", "goodFor": "Memory allocated to each gateway VM.", "limitations": "Shared gateway infrastructure is not a compute allocation. Each VM also reports 3.8 GiB of swap." }
+  }
+}

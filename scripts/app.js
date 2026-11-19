@@ -40,6 +40,10 @@ function renderUsage() {
   const p = state.current;
   const config = usageConfig(p, state.profiles);
   if (!config) return;
+  if (config.gateway) {
+    $("#usage-panel").innerHTML = `<div class="resource-builder"><span class="usage-kicker">SSH ENTRY POINT</span><h2>Connect to the HPCC</h2><p>From your own computer, connect using your HPCC username and configured SSH keys:</p><pre><code>ssh &lt;username&gt;@hpcc.msu.edu</code></pre><p>Then connect to a development node, for example <code>ssh dev-amd20</code>. Compile, test, submit jobs, and request interactive sessions from a development node—not the gateway.</p></div><aside class="usage-notice"><h3>Entry only</h3><p>Do not run software, compile, access scratch, or connect directly to compute nodes on the gateway. These shared VMs are not available for computational workloads.</p></aside><p class="usage-sources"><a href="https://docs.icer.msu.edu/Connect_to_HPCC_System/" target="_blank" rel="noopener">ICER SSH guide ↗</a><a href="https://docs.icer.msu.edu/development_nodes/" target="_blank" rel="noopener">Development nodes ↗</a><a href="https://docs.icer.msu.edu/An_SSH_tunneling_via_multiple_hops/" target="_blank" rel="noopener">SSH tunneling ↗</a></p>`;
+    return;
+  }
   if (usageProfileId !== p.id) {
     if (usageProfileId) savedUsage.set(usageProfileId, { values: usageValues, mode: usageMode });
     const saved = savedUsage.get(p.id);
@@ -104,14 +108,14 @@ function updateUsage() {
   const batch = usageMode === "slurm";
   const development = !batch && config.devNode ? `<section class="dev-route"><span class="usage-kicker">${config.development ? "SHARED DEVELOPMENT ACCESS" : "JUST TRYING SOMETHING?"}</span><h3>Quick development · shared node</h3><p>From an ICER gateway, connect with:</p><pre><code>ssh ${esc(config.devNode)}</code></pre><p>This does not reserve the resources selected above. The development node is shared: two hours of aggregate CPU time or GPU access time, and an 80% node-memory cap for processes. Use a reserved compute session for longer work or guaranteed allocations.${config.development ? "" : " Hardware may differ from the selected compute configuration."}</p></section>` : "";
   const steps = batch
-    ? `<li><strong>Save your script</strong><span>Copy into <code>${esc(config.filename)}</code> on ICER.</span></li><li><strong>Make it yours</strong><span>Replace the example program and add your environment setup.</span></li><li><strong>Submit from a gateway</strong><span><code>sbatch ${esc(config.filename)}</code></span></li>`
-    : '<li><strong>Connect to ICER</strong><span>Open a terminal on an ICER gateway.</span></li><li><strong>Request your session</strong><span>Paste the command and wait for allocation before running your program.</span></li><li><strong>Finish cleanly</strong><span>Type <code>exit</code> to release the reserved session.</span></li>';
+    ? `<li><strong>Save your script</strong><span>Copy into <code>${esc(config.filename)}</code> on ICER.</span></li><li><strong>Make it yours</strong><span>Replace the example program and add your environment setup.</span></li><li><strong>Submit from a development node</strong><span><code>sbatch ${esc(config.filename)}</code></span></li>`
+    : '<li><strong>Connect to ICER</strong><span>Connect through the gateway to a development node.</span></li><li><strong>Request your session</strong><span>Paste the command on the development node and wait for allocation before running your program.</span></li><li><strong>Finish cleanly</strong><span>Type <code>exit</code> to release the reserved session.</span></li>';
   $("#usage-output").innerHTML = `
     ${config.development ? development : ""}
     ${config.dataMachine ? `<aside class="usage-notice"><h3>Data Machine access</h3><p>Approved data-machine account membership is required. Local NVMe is temporary; save your results before the job ends.</p>${config.target.mig ? '<p>GPU requests allocate 10 GB MIG slices, not whole A100 cards. Live partitioning must be verified.</p>' : ""}</aside>` : ""}
     <section class="generated-job">
       <div class="usage-code-heading"><div><span class="usage-kicker">${batch ? "BATCH WORKFLOW" : "RESERVED WORKSPACE"}</span><h3>${batch ? "Your Slurm script" : "Reserved interactive session"}</h3></div><button type="button" class="secondary" id="copy-usage" ${result.error ? "disabled" : ""}>${batch ? "Copy script" : "Copy command"} <span aria-hidden="true">⧉</span></button></div>
-      ${result.error ? `<p class="usage-error" role="alert">${esc(result.error)}</p>` : `<div class="usage-terminal"><div class="terminal-title"><span aria-hidden="true">● ● ●</span>${batch ? esc(config.filename) : "ICER gateway · bash"}</div><pre><code>${esc(result.code)}</code></pre></div>`}
+      ${result.error ? `<p class="usage-error" role="alert">${esc(result.error)}</p>` : `<div class="usage-terminal"><div class="terminal-title"><span aria-hidden="true">● ● ●</span>${batch ? esc(config.filename) : "ICER development node · bash"}</div><pre><code>${esc(result.code)}</code></pre></div>`}
       <p id="copy-status" role="status"></p>
       <ol class="usage-steps">${steps}</ol>
     </section>
@@ -153,14 +157,17 @@ async function loadProfiles() {
   state.profiles = prepareProfiles(profiles, hardware);
   $("#profile-count").textContent = `${state.profiles.length} configurations · Oct 2026`;
   renderList();
-  choose(profiles[0].id);
+  choose(profiles.find(p => p.id === "dev-amd24")?.id || profiles[0].id);
 }
 
 function sidebarIcon(p) {
   if (p.id === "moria") return '<span class="pickaxe-glyph"></span>';
   let kind = "cpu";
   let drawing = '<rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3M19 9h3m-3 6h3"/>';
-  if (p.group === "ICER · Development") {
+  if (p.group === "ICER · Gateway") {
+    kind = "gateway";
+    drawing = '<path d="M3 22h18M5 22V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v18M8 8l2 2-2 2m4 0h3"/><circle cx="16" cy="16" r=".6"/>';
+  } else if (p.group === "ICER · Development") {
     kind = p.gpu ? "terminal-gpu" : "terminal";
     drawing = '<rect x="2" y="3" width="20" height="17" rx="3"/><path d="m6 8 3 3-3 3m6 0h4"/>';
     if (p.gpu) drawing += '<rect class="sidebar-gpu-badge" x="14" y="13" width="9" height="9" rx="2"/><path d="M17 16h3v3h-3z"/>';
@@ -234,6 +241,7 @@ function localDiagram(p) {
   return diagram;
 }
 function serverDiagram(p, view = state.diagramView) {
+  if (p.sourceKey === "gateway") return part("cpu", 80, 160, 340, 190, "Virtual CPU", `${p.vcpus} vCPUs per VM`) + wire("M420 255H575", "", 0, 0) + part("memory", 575, 160, 350, 190, p.memory, "RAM per VM");
   if (p.sockets === 2 && view === "detailed") return dualCpuDiagram(p);
   if (!p.gpu) return part("cpu", 80, 160, 340, 190, "CPU", `${p.cores} cores`) + wire("M420 255H575", "", 0, 0) + part("memory", 575, 160, 350, 190, p.memory, "System RAM");
   let diagram = part("cpu", 100, 50, 330, 150, "CPU", `${p.cores} cores`) + wire("M430 125H590", "", 0, 0) + part("memory", 590, 50, 300, 150, p.memory, "System RAM") + wire("M265 200V270H500V300", "PCIe", 500, 263);
@@ -292,9 +300,12 @@ function showCluster() {
   state.clusterOverview = true;
   const inventory = clusterInventory(state.profiles, hardware);
   const layout = clusterLayout(inventory);
+  const gateway = state.profiles.find(p => p.sourceKey === "gateway");
+  const mapWidth = layout.width + (gateway ? 200 : 0);
+  const mapHeight = Math.max(layout.height, gateway ? 460 : 0);
   $("#computer-group").textContent = "HPCC · Cluster overview";
   $("#computer-name").textContent = "The HPCC";
-  $("#computer-summary").textContent = "Every physical node in the cluster, grouped by hardware configuration. Zoom in to explore individual machines.";
+  $("#computer-summary").textContent = "Represented physical nodes, grouped by hardware configuration, plus gateway VMs shown separately. Zoom in to explore.";
   for (const selector of ["#controls", "#diagram-view-controls", "#machine-tabs", "#inspector", "#usage-panel", "#details-button", "#diagram"]) $(selector).hidden = true;
   $("#diagram").innerHTML = "";
   const pictures = new Map(inventory.configurations.map(p => [p.id, diagramContent(p, "simple")]));
@@ -303,6 +314,7 @@ function showCluster() {
     const drawing = picture.drawing.replace(/\s(?:data-part|tabindex|role|aria-label)="[^"]*"/g, "");
     return `<symbol id="cluster-${esc(p.id)}" class="${picture.superchip ? "superchip-diagram" : ""}" viewBox="0 0 1000 ${picture.height}">${drawing}</symbol>`;
   }).join("");
+  const gatewayWorld = gateway ? `<g class="map-gateway" data-configuration="${esc(gateway.id)}" transform="translate(${layout.width + 20} 6)"><rect class="map-gateway-frame" width="160" height="440" rx="12"/><text class="map-gateway-title" x="12" y="24">Gateway VMs</text><text class="map-gateway-subtitle" x="12" y="42">SSH entry · physical hosts unknown</text>${gateway.nodes.map((node, index) => `<g class="map-node map-gateway-node" data-node="${esc(node)}" transform="translate(12 ${52 + index * 94})"><title>${esc(node)} · VMware virtual machine · ${gateway.vcpus} vCPUs · ${esc(gateway.memory)} RAM · ${esc(gateway.swap)} swap · click for details</title><rect class="map-gateway-card" width="136" height="70" rx="4"/><g class="map-gateway-icon" transform="translate(12 9) scale(.55)" aria-hidden="true"><path d="M2 83h62M10 83V8a6 6 0 0 1 6-6h34a6 6 0 0 1 6 6v75"/><path d="m22 31 8 8-8 8m14 0h10"/><circle cx="47" cy="62" r="2"/></g><text class="map-gateway-detail" x="55" y="28">${gateway.vcpus} vCPUs</text><text class="map-gateway-detail" x="55" y="46">${esc(gateway.memory)} RAM</text><text class="map-gateway-name" x="68" y="85" text-anchor="middle">${esc(node)} · VM</text></g>`).join("")}</g>` : "";
   const stats = [["Compute nodes", inventory.computeNodes], ["Development nodes", inventory.developmentNodes], ["CPUs · compute", inventory.physicalCpus], ["CPU cores · compute", inventory.physicalCores], ["GPUs · compute", inventory.physicalGpus], ["GPU CUDA cores · compute", inventory.gpuCores], ["System RAM · compute", `${inventory.memoryGb.toLocaleString("en-US")} GB`]];
   const world = layout.groups.map(group => {
     const count = group.configurations.reduce((sum, block) => sum + block.nodes.length, 0);
@@ -319,13 +331,13 @@ function showCluster() {
   $("#cluster-panel").innerHTML = `
     <div class="cluster-map" id="cluster-map"><div class="cluster-map-toolbar"><span>Scroll / pinch to zoom · drag to pan</span><div class="cluster-map-controls" role="group" aria-label="Cluster map controls"><button type="button" data-map-action="out" aria-label="Zoom out">−</button><output id="cluster-zoom" aria-label="Zoom level">Fit</output><button type="button" data-map-action="in" aria-label="Zoom in">+</button><button type="button" data-map-action="fit">Fit all</button><button type="button" data-map-action="actual">100%</button><button type="button" data-map-action="fullscreen">Fullscreen</button></div></div>
       <div id="cluster-viewport" class="cluster-viewport" tabindex="0" role="region" aria-label="Zoomable HPCC map. Use plus or minus to zoom, arrow keys to pan, and zero to fit all nodes.">
-        <svg id="cluster-canvas" class="cluster-canvas" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" role="img" aria-labelledby="cluster-map-title cluster-map-description"><title id="cluster-map-title">The HPCC · ${inventory.totalNodes} individual nodes</title><desc id="cluster-map-description">One miniature of the existing architecture diagram for each represented physical node, grouped by configuration. CPU, GPU, Data Machine, Superchip and shared development nodes; Moria is not part of the cluster.</desc>${superchipGradients()}<defs>${symbols}</defs><g id="cluster-world">${world}</g></svg>
+        <svg id="cluster-canvas" class="cluster-canvas" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" role="img" aria-labelledby="cluster-map-title cluster-map-description"><title id="cluster-map-title">The HPCC · ${inventory.totalNodes} physical nodes and gateway VMs</title><desc id="cluster-map-description">Physical CPU, GPU, Data Machine, Superchip and development nodes are grouped by configuration. Gateway virtual machines appear separately; Moria is not part of the cluster.</desc>${superchipGradients()}<defs>${symbols}</defs><g id="cluster-world">${world}${gatewayWorld}</g></svg>
       </div><p class="cluster-map-status" role="status">${buyInDataAvailable ? '<span class="map-buyin-legend">$</span> Buy-in node · ' : 'Buy-in node data unavailable · '}Hover over a node for its name; click it to open its configuration. Keyboard: + / − zoom, arrows pan, 0 fits everything. Use the sidebar to open individual configurations.</p>
     </div>
     <dl class="cluster-stats" aria-label="Cluster inventory totals">${stats.map(([label, count]) => `<div><dt>${label}</dt><dd>${count.toLocaleString("en-US")}</dd></div>`).join("")}</dl>
-    <p class="cluster-note">${inventory.totalNodes} nodes across ${inventory.configurations.length} configurations in this atlas. Hardware totals exclude development nodes; GPU cores are physical CUDA cores, not Tensor cores. RAM is CPU-side system memory, with 1 TB counted as 1,000 GB. Static inventory—not live availability, a network topology map, or one shared memory pool. Gateways, storage services, and other unlisted infrastructure are not pictured. Moria is separate.</p>`;
+    <p class="cluster-note">${inventory.totalNodes} physical nodes across ${inventory.configurations.length} configurations in this atlas. The four gateway VMs are shown separately and excluded from these counts; their user-provided details are unverified, and physical host placement is unknown. Hardware totals exclude development nodes; GPU cores are physical CUDA cores, not Tensor cores. RAM is CPU-side system memory, with 1 TB counted as 1,000 GB. Static inventory—not live availability, a network topology map, or one shared memory pool. Storage services and other unlisted infrastructure are not pictured. Moria is separate.</p>`;
   $("#cluster-panel").hidden = false;
-  disposeClusterMap = mountClusterMap({ root: $("#cluster-map"), viewport: $("#cluster-viewport"), world: $("#cluster-world"), readout: $("#cluster-zoom"), width: layout.width, height: layout.height, onSelectNode: id => { if (document.fullscreenElement === $("#cluster-map")) document.exitFullscreen().catch(() => {}); choose(id); } });
+  disposeClusterMap = mountClusterMap({ root: $("#cluster-map"), viewport: $("#cluster-viewport"), world: $("#cluster-world"), readout: $("#cluster-zoom"), width: mapWidth, height: mapHeight, onSelectNode: id => { if (document.fullscreenElement === $("#cluster-map")) document.exitFullscreen().catch(() => { }); choose(id); } });
   renderList();
 }
 
@@ -336,9 +348,10 @@ function renderDiagram() {
   const { drawing, height, superchip } = diagramContent(p);
   const topologyNote = p.layout === "grace-hopper"
     ? "Conceptual layout · Grace CPU ↔ Hopper GPU uses coherent NVLink-C2C; not an exact wiring map."
-    : p.gpu
-      ? `${p.gpu === "L40S" ? "PCIe · no NVLink." : p.nvlink === "Yes" ? "GPU-to-GPU NVLink documented." : "GPU connections are schematic."} Exact wiring and PCIe peer-access support are unverified; no direct-link or switch topology is implied.`
-      : "Conceptual layout · exact memory attachment and interconnect wiring are not verified.";
+    : p.sourceKey === "gateway" ? "Conceptual resources per VMware VM · physical host count and placement unknown. User-provided observations are unverified."
+      : p.gpu
+        ? `${p.gpu === "L40S" ? "PCIe · no NVLink." : p.nvlink === "Yes" ? "GPU-to-GPU NVLink documented." : "GPU connections are schematic."} Exact wiring and PCIe peer-access support are unverified; no direct-link or switch topology is implied.`
+        : "Conceptual layout · exact memory attachment and interconnect wiring are not verified.";
   $("#diagram").innerHTML = `<svg class="${superchip ? "superchip-diagram" : ""}" viewBox="0 0 1000 ${height}" role="img" aria-label="${esc(p.label)} architecture diagram">${superchip ? superchipGradients() : ""}${drawing}</svg><p class="topology-note">${esc(topologyNote)}</p>`;
 }
 
@@ -358,6 +371,11 @@ function showInspector(kind) {
 }
 
 function componentFacts(p, kind) {
+  if (p.sourceKey === "gateway") {
+    if (kind === "cpu") return [["Reported processor", p.cpu], ["Virtual CPUs per VM", p.vcpus], ["Physical cores", "Unknown; vCPUs are virtual allocations"]];
+    if (kind === "memory") return [["RAM per VM", p.memory], ["Swap per VM", p.swap]];
+    return [["Virtual machines", p.nodes.join(", ")], ["Virtualization", p.virtualization], ["Reported processor", p.cpu], ["vCPUs per VM", p.vcpus], ["RAM per VM", p.memory], ["Swap per VM", p.swap], ["Physical hosts", "Number and placement unknown"], ["VM specifications", "User-provided, unverified and undated"]];
+  }
   if (kind === "cpu-0" || kind === "cpu-1") return [["Processor", p.cpu], ["Physical cores · this chip", p.coresPerSocket], ...(p.id === "moria" ? [["Hardware threads · this chip", p.threadsPerSocket]] : []), ["Cache · this chip", p.cachePerSocket]];
   if (kind === "cpu-interconnect") return [["Connection", p.cpuLink === "NVLink-C2C" ? "NVLink-C2C" : "Infinity Fabric · xGMI"], ["Connects", "CPU 1 ↔ CPU 2"], ["Purpose", "Coherent data and remote-memory access"], ["Physical link count", "Schematic; not an exact wiring map"]];
   if (kind === "cpu") return [["Processor type", p.cpuSpecs?.type || p.cpu], ["Physical cores", p.cpuSpecs?.cores || "Model-dependent"], ...(p.id === "moria" ? [["Thread capability", p.cpuSpecs.threads]] : []), ["Cache", p.cpuSpecs?.cache || "Model-dependent"]];
@@ -375,7 +393,7 @@ function gpuBandwidthFacts(p) {
 }
 function details() {
   const p = state.current;
-  const fields = [["Processor", p.cpu], ["Architecture", p.architecture], ...(p.cores ? [["Physical CPU cores", p.cores]] : []), ...(p.id === "moria" ? [["Scheduler CPU slots", p.threads]] : []), ["Memory", p.memory], ...(p.gpu ? [["GPUs", `${p.gpuCount} × ${p.gpu}`], ["Memory per physical GPU", p.vram]] : []), ...(p.mig ? [["Memory per allocated slice", p.sliceMemory]] : []), ...(p.nodeRange ? [["Node names", p.nodeRange], ["Node count", p.nodeCount]] : []), ...(p.ssd ? [["Published local storage", p.ssd]] : []), ...(p.interconnect ? [["Host connection", p.interconnect]] : []), ...(p.nvlink ? [["GPU-to-GPU NVLink", p.nvlink]] : []), ...(p.group.startsWith("ICER") ? [["Inventory reviewed", p.reviewed], ["Resource scope", "Per node; not a live allocation or availability check"]] : [])];
+  const fields = [["Processor", p.cpu], ["Architecture", p.architecture], ...(p.vcpus ? [["Virtual CPUs per VM", p.vcpus], ["Virtualization", p.virtualization], ["Swap per VM", p.swap]] : []), ...(p.cores ? [["Physical CPU cores", p.cores]] : []), ...(p.id === "moria" ? [["Scheduler CPU slots", p.threads]] : []), ["Memory", p.memory], ...(p.gpu ? [["GPUs", `${p.gpuCount} × ${p.gpu}`], ["Memory per physical GPU", p.vram]] : []), ...(p.mig ? [["Memory per allocated slice", p.sliceMemory]] : []), ...(p.nodeRange ? [["Node names", p.nodeRange], ["Node count", p.nodeCount]] : []), ...(p.ssd ? [["Published local storage", p.ssd]] : []), ...(p.interconnect ? [["Host connection", p.interconnect]] : []), ...(p.nvlink ? [["GPU-to-GPU NVLink", p.nvlink]] : []), ...(p.group.startsWith("ICER") ? p.sourceKey === "gateway" ? [["Resource scope", "Per VM; user-provided, unverified and undated"]] : [["Inventory reviewed", p.reviewed], ["Resource scope", "Per node; not a live allocation or availability check"]] : [])];
   fields.push(...gpuBandwidthFacts(p));
   $("#dialog-title").textContent = p.label;
   $("#dialog-content").innerHTML = `<dl class="details-grid">${fields.map(([name, value]) => `<dt>${esc(name)}</dt><dd>${esc(value)}</dd>`).join("")}</dl>${p.note ? `<p class="dialog-note">${esc(p.note)}</p>` : ""}${p.source?.url ? `<a class="source-link" href="${esc(p.source.url)}" target="_blank" rel="noopener">${esc(p.source.label)} ↗</a>` : `<p class="dialog-note">${esc(p.source?.label || "")}</p>`}`;

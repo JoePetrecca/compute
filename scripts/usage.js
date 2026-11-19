@@ -35,6 +35,7 @@ function compactNodes(nodes) {
 
 export function usageConfig(profile, profiles = []) {
   if (!profile?.group?.startsWith("ICER")) return null;
+  if (profile.sourceKey === "gateway") return { gateway: true, target: profile };
   const development = profile.sourceKey === "development";
   if (development) return { development: true, target: profile, devNode: profile.id, wholeNode: false };
   const target = profile;
@@ -49,7 +50,7 @@ export function usageConfig(profile, profiles = []) {
   const devNode = development ? profile.id : grace || dataMachine ? null : target.gpu === "H200" ? "dev-amd24-h200" : ["V100", "V100S"].includes(target.gpu) ? "dev-amd20-v100" : target.gpu ? null : target.cpu.includes("EPYC 9") ? "dev-amd24" : target.cpu.includes("EPYC") ? "dev-amd20" : "dev-intel18";
   const anyNode = nodes.length > 1 && profiles.some(p => p.id === profile.id);
   const allowed = new Set(nodes);
-  const excludedNodes = anyNode ? profiles.filter(p => p.group?.startsWith("ICER") && p.sourceKey !== "development").flatMap(p => {
+  const excludedNodes = anyNode ? profiles.filter(p => p.group?.startsWith("ICER") && !["development", "gateway"].includes(p.sourceKey)).flatMap(p => {
     const candidates = p.nodes?.length ? p.nodes : expandNodes(p.nodeRange);
     return nodeConstraint(p, candidates) === constraint ? candidates.filter(node => !allowed.has(node)) : [];
   }) : [];
@@ -68,7 +69,7 @@ export function usageConfig(profile, profiles = []) {
 
 export function usageValuesFor(profile, profiles = []) {
   const config = usageConfig(profile, profiles);
-  if (config?.development) return { ...usageDefaults };
+  if (config?.development || config?.gateway) return { ...usageDefaults };
   if (config?.grace) return { ...usageDefaults, cpus: config.maxGpus ? "72" : "4", memory: "10", time: "03:00:00", targetNode: config.anyNode ? "any" : config.nodes[0], workload: config.maxGpus ? "cuda-sample" : "custom" };
   return { ...usageDefaults, ...(config ? { cpus: String(Math.min(4, config.maxCpus)), memory: String(Math.min(32, config.maxMemory)), account: config.dataMachine ? "data-machine" : "", targetNode: config.anyNode ? "any" : config.nodes[0] } : {}) };
 }
@@ -76,6 +77,7 @@ export function usageValuesFor(profile, profiles = []) {
 export function buildUsage(profile, values, mode = "slurm", profiles = []) {
   const config = usageConfig(profile, profiles);
   if (!config) return { error: "Usage instructions are available for supported ICER configurations only." };
+  if (config.gateway) return { error: "Gateway nodes are SSH entry points, not scheduled compute resources." };
   if (config.development) {
     if (mode !== "interactive") return { error: "Development nodes use interactive SSH access, not Slurm reservations." };
     if (!/^dev-[A-Za-z0-9-]+$/.test(config.devNode)) return { error: "Invalid development-node hostname." };

@@ -3,7 +3,7 @@ export function parseBuyInNodes(text) {
 }
 
 export function clusterInventory(profiles, hardware = {}) {
-  const configurations = profiles.filter(p => p.group?.startsWith("ICER"));
+  const configurations = profiles.filter(p => p.group?.startsWith("ICER") && p.sourceKey !== "gateway");
   const compute = configurations.filter(p => p.sourceKey !== "development");
   const development = configurations.filter(p => p.sourceKey === "development");
   const count = entries => entries.reduce((total, p) => total + p.nodes.length, 0);

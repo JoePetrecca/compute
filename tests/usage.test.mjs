@@ -11,7 +11,7 @@ const profiles = prepareProfiles(await Promise.all(ids.map(id => json(`data/comp
 const profile = profiles.find(p => p.id === "h200-4");
 
 test("every ICER configuration has correct SSH or single-node scheduled access", () => {
-  assert.equal(profiles.filter(p => usageConfig(p, profiles)).length, 36);
+  assert.equal(profiles.filter(p => usageConfig(p, profiles)).length, 37);
   for (const p of profiles) {
     if (p.id === "moria") {
       assert.equal(usageConfig(p, profiles), null);
@@ -20,6 +20,11 @@ test("every ICER configuration has correct SSH or single-node scheduled access",
     }
     const config = usageConfig(p, profiles);
     const values = usageValuesFor(p, profiles);
+    if (config.gateway) {
+      assert.ok(buildUsage(p, values, "interactive").error);
+      assert.ok(buildUsage(p, values, "slurm").error);
+      continue;
+    }
     if (config.development) {
       assert.equal(buildUsage(p, values, "interactive").code, `ssh ${p.id}`);
       execFileSync("bash", ["-n"], { input: buildUsage(p, values, "interactive").code });
@@ -101,7 +106,7 @@ test("invalid requests and shell injection cannot produce runnable templates", (
 test("whole-node requests are exclusive except for MIG and preserve custom settings", () => {
   for (const p of profiles.filter(p => p.group.startsWith("ICER"))) {
     const config = usageConfig(p, profiles);
-    if (config.development) continue;
+    if (config.development || config.gateway) continue;
     const values = { ...usageValuesFor(p, profiles), wholeNode: true };
     const before = { ...values };
     for (const mode of ["slurm", "interactive"]) {
